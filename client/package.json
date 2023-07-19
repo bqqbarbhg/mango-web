@@ -4,6 +4,7 @@
   "description": "Mango web frontend (client)",
   "main": "index.js",
   "scripts": {
+    "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "author": "",
   "license": "ISC",

@@ -4,8 +4,9 @@
   "description": "Mango web frontend",
   "main": "index.js",
   "scripts": {
-    "watch": "esbuild --watch ./client/index.ts",
-    "serve": "ts-node-dev --respawn --transpile-only ./server/index.ts"
+    "watch": "esbuild --watch ./client/index.ts --bundle --loader:.glsl=text --outfile=build/bundle.js --jsx-factory=h --jsx-fragment=Fragment",
+    "serve": "ts-node-dev --respawn --transpile-only ./server/index.ts",
+    "typecheck": "npm run typecheck --workspaces"
   },
   "workspaces": [
     "server",

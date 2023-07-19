@@ -4,7 +4,14 @@
   "description": "Mango web frontend (server)",
   "main": "index.js",
   "scripts": {
+    "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.4.2",
+    "express": "^4.18.2",
+    "typescript": "^5.1.6"
+  }
 }
