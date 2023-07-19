@@ -1,6 +1,7 @@
 #version 300 es
 
 uniform vec2 basePosition;
+uniform vec2 quadScale;
 
 out vec2 v_uv;
 
@@ -16,6 +17,7 @@ void main()
     else if (index == 4) uv = vec2(0.0, 1.0);
     else                 uv = vec2(0.0, 0.0);
 
-    gl_Position = vec4(basePosition + uv, 0.0, 1.0);
+    vec2 pos = basePosition + uv * quadScale;
+    gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
     v_uv = uv;
 }

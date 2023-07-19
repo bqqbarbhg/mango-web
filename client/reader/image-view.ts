@@ -5,7 +5,7 @@ import vertexShader from "./shader/vertex.glsl"
 import fragmentShader from "./shader/fragment.glsl"
 
 export default class ImageView {
-    parentElement: Element
+    parentElement: HTMLElement
     canvas: HTMLCanvasElement
 
     gl: WebGL2RenderingContext
@@ -16,15 +16,20 @@ export default class ImageView {
     mainShader: WebGLProgram
     mainBinds: UniformBinds
 
-    x: number
-    y: number
+    renderWidth: number = 0
+    renderHeight: number = 0
+
+    x: number = 0
+    y: number = 0
 
     constructor(parent: HTMLElement, canvas: HTMLCanvasElement) {
+        this.parentElement = parent
+        this.canvas = canvas
+
         const observer = new ResizeObserver(this.onParentResized)
         observer.observe(parent)
 
-        this.parentElement = parent
-        this.canvas = canvas
+        this.onParentResized()
 
         const gl = canvas.getContext("webgl2", {
             alpha: false,
@@ -41,16 +46,30 @@ export default class ImageView {
         this.mainShader = gfx.compileProgram(vertexShader, fragmentShader)
         this.mainBinds = gfx.createUniformBinds(this.mainShader, {
             basePosition: UniformBind.vec2,
+            quadScale: UniformBind.vec2,
             mainTexture: UniformBind.texture2d,
         })
-        
-        this.x = 0
-        this.y = 0
     }
 
     onParentResized = () => {
         const { canvas, parentElement } = this
 
+        const parentWidth = parentElement.offsetWidth
+        const parentHeight = parentElement.offsetHeight
+        const ratio = window.devicePixelRatio
+
+        const canvasWidth = Math.floor(parentWidth)
+        const canvasHeight = Math.floor(parentHeight)
+        const renderWidth = Math.floor(canvasWidth * ratio)
+        const renderHeight = Math.floor(canvasHeight * ratio)
+
+        canvas.width = renderWidth
+        canvas.height = renderHeight
+        canvas.style.width = `${canvasWidth}px`
+        canvas.style.height = `${canvasHeight}px`
+
+        this.renderWidth = renderWidth
+        this.renderHeight = renderHeight
     }
 
     setImage(image: HTMLImageElement) {
@@ -76,7 +95,6 @@ export default class ImageView {
         const texture = gl.createTexture()
         gl.bindTexture(gl.TEXTURE_2D, texture)
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, canvas)
-        // gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, image)
         gl.generateMipmap(gl.TEXTURE_2D)
 
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
@@ -90,12 +108,15 @@ export default class ImageView {
     render() {
         const { gl, gfx } = this
 
+        gl.viewport(0, 0, this.renderWidth, this.renderHeight)
+
         gl.clearColor(0, 0, 0, 1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
 
         gl.useProgram(this.mainShader)
         gfx.applyBinds(this.mainBinds, {
             basePosition: { x: this.x, y: this.y },
+            quadScale: { x: 1.0, y: 1.0 },
             mainTexture: this.texture,
         })
         gl.drawArrays(gl.TRIANGLES, 0, 6)
