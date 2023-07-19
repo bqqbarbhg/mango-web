@@ -1,0 +1,10 @@
+{
+  "name": "@mango-web/server",
+  "version": "0.0.1",
+  "description": "Mango web frontend (server)",
+  "main": "index.js",
+  "scripts": {
+  },
+  "author": "",
+  "license": "ISC"
+}

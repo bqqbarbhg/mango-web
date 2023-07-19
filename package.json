@@ -1,0 +1,22 @@
+{
+  "name": "mango-web",
+  "version": "0.0.1",
+  "description": "Mango web frontend",
+  "main": "index.js",
+  "scripts": {
+    "watch": "esbuild --watch ./client/index.ts",
+    "serve": "ts-node-dev --respawn --transpile-only ./server/index.ts"
+  },
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "esbuild": "^0.18.14"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0"
+  }
+}

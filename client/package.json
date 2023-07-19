@@ -1,0 +1,13 @@
+{
+  "name": "@mango-web/client",
+  "version": "0.0.1",
+  "description": "Mango web frontend (client)",
+  "main": "index.js",
+  "scripts": {
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "kaiku": "^1.21.3"
+  }
+}
