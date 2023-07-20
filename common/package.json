@@ -1,0 +1,14 @@
+{
+  "name": "@mango-web/common",
+  "version": "0.0.1",
+  "description": "Mango web frontend (common)",
+  "main": "index.js",
+  "scripts": {
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "io-ts": "^2.2.20"
+  }
+}

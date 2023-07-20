@@ -1,4 +1,5 @@
 import ImageView from "./reader/image-view"
+import { apiCall } from "./utils/api"
 
 const parent = document.querySelector("#main-parent") as HTMLElement
 const canvas = document.querySelector("#main-canvas") as HTMLCanvasElement
@@ -36,5 +37,22 @@ function render() {
 
     window.requestAnimationFrame(render)
 }
+
+async function test() {
+    try {
+        await apiCall("POST /users", {
+            username: "test-user",
+            password: "test-pass",
+        })
+    } catch (err) {
+        console.error(err)
+    }
+
+    const result = await apiCall("GET /users/:id", {
+        id: "1"
+    })
+    console.log(result)
+}
+test()
 
 render()

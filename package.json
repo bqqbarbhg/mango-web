@@ -9,6 +9,7 @@
     "typecheck": "npm run typecheck --workspaces"
   },
   "workspaces": [
+    "common",
     "server",
     "client"
   ],
