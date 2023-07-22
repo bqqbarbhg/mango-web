@@ -1,3 +1,5 @@
+
+/*
 import { addUser, getUserById, getUserByName } from "./database/user"
 import { Router } from "express"
 import { apiRoute, apiRouteAuth } from "./utils/api"
@@ -5,6 +7,8 @@ import bcrypt from "bcrypt"
 import { generateJwtKey, signJwtToken } from "./utils/auth"
 
 const r = Router()
+
+/*
 
 apiRoute(r, "POST /users", async (req) => {
     const passwordHash = await bcrypt.hash(req.password, 10)
@@ -42,4 +46,6 @@ apiRouteAuth(r, "GET /user/settings", async (req, user) => {
     return { test: "ship it" }
 })
 
+
 export default r
+*/

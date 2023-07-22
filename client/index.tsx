@@ -27,16 +27,44 @@ function IndexTop() {
         e.preventDefault()
         try {
             state.pending = true
-            const result = await apiCall("POST /users", {
+            const registerResult = await apiCall("POST /auth/register", {
                 username: state.username,
                 password: state.password,
             })
-            console.log(result)
-            globalState.apiToken = result.token
-            setApiToken(result.token)
+            console.log(registerResult)
 
-            const settings = await apiCall("GET /user/settings", { })
-            console.log(settings)
+            const loginResult = await apiCall("POST /auth/login", {
+                username: state.username,
+                password: state.password,
+                device: navigator.userAgent,
+            })
+            console.log(loginResult)
+
+            setApiToken(loginResult.token)
+
+            const loginResult2 = await apiCall("POST /auth/login", {
+                username: state.username,
+                password: state.password,
+                device: navigator.userAgent,
+            })
+
+            const sessions = await apiCall("GET /auth/sessions", { })
+            console.log(sessions)
+
+            const logoutResult = await apiCall("DELETE /auth/sessions/:uuid", {
+                uuid: sessions.sessions[1]!.uuid,
+            })
+            console.log(logoutResult)
+
+            const sessions2 = await apiCall("GET /auth/sessions", { })
+            console.log(sessions2)
+
+            const logoutResult2 = await apiCall("DELETE /auth/sessions", { })
+            console.log(logoutResult2)
+
+            const sessions3 = await apiCall("GET /auth/sessions", { })
+            console.log(sessions3)
+
         } catch (e) {
             console.error(e)
         } finally {

@@ -1,40 +1,25 @@
 import { randomBytes } from "node:crypto"
-import { getUserJwtKeyById } from "../database/user"
-import { JwtPayload, sign, verify } from "jsonwebtoken"
-
-const jwtCache: Map<string, Buffer> = new Map()
+import fs from "node:fs"
+import { sign, verify } from "jsonwebtoken"
 
 type TokenPayload = {
-    id: string
-    username: string
+    sessionId: number
+    userId: number
 }
 
-export function generateJwtKey(): string {
-    return randomBytes(256).toString("hex")
+const jwtKeyFile = "build/jwt-key"
+try {
+    fs.statSync(jwtKeyFile)
+} catch (err) {
+    fs.writeFileSync(jwtKeyFile, randomBytes(256))
+}
+const jwtKey = fs.readFileSync(jwtKeyFile)
+
+export function signJwt(payload: TokenPayload): string {
+    return sign(payload, jwtKey)
 }
 
-export async function getJwtKey(userId: string): Promise<Buffer> {
-    const cached = jwtCache.get(userId)
-    if (cached !== undefined) return cached
-
-    console.log(userId)
-    const hexKey = await getUserJwtKeyById(userId)
-    if (!hexKey) throw new Error(`failed to get user JWT key: ${userId}`)
-
-    const key = Buffer.from(hexKey, "hex")
-    jwtCache.set(userId, key)
-    return key
-}
-
-export async function signJwtToken(userId: string, payload: TokenPayload): Promise<string> {
-    const key = await getJwtKey(userId)
-    const token = sign(payload, key)
-
-    return `${userId}-${token}`
-}
-
-export async function verifyJwtToken(userId: string, jwtToken: string): Promise<TokenPayload> {
-    const key = await getJwtKey(userId)
-    return verify(jwtToken, key, { complete: true }).payload as TokenPayload
+export function verifyJwt(jwtToken: string): TokenPayload {
+    return verify(jwtToken, jwtKey, { complete: true }).payload as TokenPayload
 }
 

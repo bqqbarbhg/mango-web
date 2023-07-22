@@ -1,7 +1,12 @@
 import apiRoutes from "../../common/api-routes"
 import type { TypeOf } from "io-ts"
 import { RequestHandler, Router, Request } from "express"
-import { verifyJwtToken } from "./auth"
+import { verifyJwt } from "./auth"
+import { selectOptional } from "./database"
+import sql from "sql-template-strings"
+import * as t from "io-ts"
+
+export let apiRouter = Router()
 
 type ApiRoutes = typeof apiRoutes
 
@@ -10,8 +15,8 @@ export type ApiContext = {
 }
 
 export type ApiUser = {
-    id: string
-    username: string
+    sessionId: number
+    userId: number
 }
 
 export class HttpError extends Error {
@@ -24,7 +29,6 @@ export class HttpError extends Error {
 }
 
 export function apiRoute<Route extends keyof ApiRoutes>(
-    r: Router,
     route: Route,
     func: (req: TypeOf<typeof apiRoutes[Route]["req"]>, ctx: ApiContext)
         => Promise<TypeOf<typeof apiRoutes[Route]["res"]>>) {
@@ -74,21 +78,22 @@ export function apiRoute<Route extends keyof ApiRoutes>(
 
     const [method, path] = route.split(" ", 2)
     if (method === "GET") {
-        r.get(path!, handler)
+        apiRouter.get(path!, handler)
+    } else if (method === "DELETE") {
+        apiRouter.delete(path!, handler)
     } else if (method === "POST") {
-        r.post(path!, handler)
+        apiRouter.post(path!, handler)
     } else {
         throw new Error(`Unknown method in route: ${route}`)
     }
 }
 
 export function apiRouteAuth<Route extends keyof ApiRoutes>(
-    r: Router,
     route: Route,
     func: (req: TypeOf<typeof apiRoutes[Route]["req"]>, user: ApiUser, ctx: ApiContext)
         => Promise<TypeOf<typeof apiRoutes[Route]["res"]>>) {
 
-    apiRoute(r, route, async (req, ctx) => {
+    apiRoute(route, async (req, ctx) => {
         const auth = ctx.request.get("Authorization") ?? ""
         if (auth === "") {
             throw new HttpError(401, "Unauthorized")
@@ -99,12 +104,15 @@ export function apiRouteAuth<Route extends keyof ApiRoutes>(
             throw new HttpError(401, "Authorization header not Bearer")
         }
 
-        const [userId, jwtToken] = token.split("-", 2)
-        if (!userId || !jwtToken) {
-            throw new HttpError(401, "Bad JWT token in Authorization")
+        const payload = verifyJwt(token)
+
+        const verify = await selectOptional(t.type({ id: t.number }), sql`
+            SELECT id FROM Sessions WHERE id=${payload.sessionId}
+        `)
+        if (!verify || payload.sessionId !== verify.id) {
+            throw new Error("outdated session")
         }
 
-        const payload = await verifyJwtToken(userId, jwtToken)
         return func(req, payload, ctx)
     })
 }

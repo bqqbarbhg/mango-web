@@ -40,7 +40,6 @@ export async function apiCall<Route extends keyof ApiRoutes>(
     if (apiToken && apiToken !== "") {
         headers["Authorization"] = `Bearer ${apiToken}`
     }
-    console.log(headers)
 
     const hasBody = method === "POST"
     const response = await fetch(finalPath, {

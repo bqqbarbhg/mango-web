@@ -1,7 +1,8 @@
 import express from "express"
 import { setupDatabase } from "./utils/database"
 import { parseArgs } from "node:util"
-import apiRouter from "./api-routes"
+import "./api"
+import { apiRouter } from "./utils/api"
 
 async function main() {
     const { values: args } = parseArgs({
