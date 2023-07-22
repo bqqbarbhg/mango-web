@@ -3,6 +3,12 @@ import type { TypeOf } from "io-ts"
 
 type ApiRoutes = typeof apiRoutes
 
+let apiToken: string | null = null
+
+export function setApiToken(token: string | null) {
+    apiToken = token
+}
+
 export async function apiCall<Route extends keyof ApiRoutes>(
     route: Route,
     req: TypeOf<typeof apiRoutes[Route]["req"]>)
@@ -27,12 +33,18 @@ export async function apiCall<Route extends keyof ApiRoutes>(
         }
     }
 
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    }
+
+    if (apiToken && apiToken !== "") {
+        headers["Authorization"] = `Bearer ${apiToken}`
+    }
+    console.log(headers)
+
     const hasBody = method === "POST"
     const response = await fetch(finalPath, {
-        method,
-        headers: {
-            "Content-Type": "application/json",
-        },
+        method, headers,
         body: hasBody ? JSON.stringify(body) : undefined,
     })
     const json = await response.json()

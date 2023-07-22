@@ -4,7 +4,7 @@
   "description": "Mango web frontend",
   "main": "index.js",
   "scripts": {
-    "watch": "esbuild --watch ./client/index.ts --bundle --loader:.glsl=text --outfile=build/bundle.js --jsx-factory=h --jsx-fragment=Fragment",
+    "watch": "esbuild --watch ./client/index.tsx --bundle --loader:.glsl=text --outfile=build/bundle.js --jsx-factory=h --jsx-fragment=Fragment --tsconfig-raw={}",
     "serve": "ts-node-dev --respawn --transpile-only ./server/index.ts",
     "typecheck": "npm run typecheck --workspaces"
   },
@@ -13,6 +13,7 @@
     "server",
     "client"
   ],
+  "private": true,
   "author": "",
   "license": "ISC",
   "dependencies": {

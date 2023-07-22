@@ -8,6 +8,7 @@
   },
   "author": "",
   "license": "ISC",
+  "private": true,
   "dependencies": {
     "io-ts": "^2.2.20"
   }

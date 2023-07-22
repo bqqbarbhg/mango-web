@@ -1,4 +1,8 @@
 
+body {
+    font-family: sans-serif;
+}
+
 #main-parent {
     overflow: hidden;
 }

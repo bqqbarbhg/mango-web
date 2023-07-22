@@ -7,7 +7,8 @@ CREATE TABLE Users (
     id INTEGER PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    settings TEXT NOT NULL
+    settings TEXT,
+    jwtKey TEXT NOT NULL
 );
 
 --------------------------------------------------------------------------------
