@@ -1,6 +1,6 @@
 import ImageView from "./reader/image-view"
 import { apiCall, setApiToken } from "./utils/api"
-import { createState, render, useState, useEffect, h, Fragment } from "kaiku"
+import { createState, render, useState } from "kaiku"
 
 const globalState = createState({
     apiToken: "",
