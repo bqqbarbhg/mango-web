@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "watch": "esbuild --watch ./client/index.tsx --bundle --loader:.glsl=text --outfile=build/bundle.js",
+    "build": "esbuild ./client/index.tsx --bundle --define:process.env.NODE_ENV=\\\"production\\\" --minify --loader:.glsl=text --outfile=build/bundle.js",
     "serve": "ts-node-dev --respawn --transpile-only ./server/index.ts",
     "typecheck": "npm run typecheck --workspaces"
   },
