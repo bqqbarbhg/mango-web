@@ -10,6 +10,6 @@
   "license": "ISC",
   "private": true,
   "dependencies": {
-    "kaiku": "file:../../ext/kaiku"
+    "kaiku": "^1.21.5"
   }
 }
