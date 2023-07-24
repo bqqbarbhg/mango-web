@@ -28,6 +28,15 @@ export class HttpError extends Error {
     }
 }
 
+export class UserError extends HttpError {
+    inner: Error | null
+
+    constructor(message: string, inner: Error|null = null, code: number = 400) {
+        super(code, message)
+        this.inner = inner
+    }
+}
+
 export function apiRoute<Route extends keyof ApiRoutes>(
     route: Route,
     func: (req: TypeOf<typeof apiRoutes[Route]["req"]>, ctx: ApiContext)
@@ -68,7 +77,14 @@ export function apiRoute<Route extends keyof ApiRoutes>(
                     } else {
                         res.status(400)
                     }
-                    res.json({ error: err.message ?? "" })
+                    if (err instanceof UserError) {
+                        res.json({
+                            userError: err.message ?? "",
+                            error: err.inner?.message ?? "",
+                        })
+                    } else {
+                        res.json({ error: err.message ?? "" })
+                    }
                 })
         } else {
             res.status(400)

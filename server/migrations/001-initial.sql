@@ -17,9 +17,17 @@ CREATE TABLE Sessions (
     uuid TEXT NOT NULL UNIQUE
 );
 
+CREATE TABLE Sources (
+    id INTEGER PRIMARY KEY,
+    userId INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+    url TEXT NOT NULL,
+    uuid TEXT NOT NULL UNIQUE
+);
+
 --------------------------------------------------------------------------------
 -- Down
 --------------------------------------------------------------------------------
 
 DROP TABLE Users;
 DROP TABLE Sessions;
+DROP TABLE Sources;

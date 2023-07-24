@@ -1,4 +1,5 @@
 import apiRoutes from "../../common/api-routes"
+import { MangoError, reportError } from "../state"
 import type { TypeOf } from "io-ts"
 
 type ApiRoutes = typeof apiRoutes
@@ -48,8 +49,13 @@ export async function apiCall<Route extends keyof ApiRoutes>(
     })
     const json = await response.json()
 
-    if (json.error) {
-        throw new Error(`API error: ${route}: ${json.error}`)
+    console.log(json)
+    if (response.status !== 200) {
+        if (json.userError) {
+            throw new MangoError("user", json.userError)
+        } else {
+            throw new MangoError("api", json.error ?? "")
+        }
     } else {
         return json
     }

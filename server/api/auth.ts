@@ -1,4 +1,4 @@
-import { apiRoute, apiRouteAuth } from "../utils/api"
+import { UserError, apiRoute, apiRouteAuth } from "../utils/api"
 import bcrypt from "bcrypt"
 import { run, select, selectAll } from "../utils/database"
 import * as t from "io-ts"
@@ -8,15 +8,29 @@ import { v4 as uuidv4 } from "uuid"
 
 apiRoute("POST /auth/register", async (req) => {
     const passwordHash = await bcrypt.hash(req.password, 10)
-    const result = await run(sql`
-        INSERT INTO Users (username, password)
-        VALUES (${req.username}, ${passwordHash})
-    `)
 
-    const userId = result.lastID
-    if (userId === undefined) throw new Error("failed to insert user")
+    if (req.username.length === 0) throw new UserError("Empty username")
+    const badChar = req.username.match(/[^a-zA-Z0-9_\.]/)
+    if (badChar) throw new UserError(`Forbidden character '${badChar[0]}' (U+${badChar[0].charCodeAt(0).toString(16).toUpperCase()}) in username`)
+    if (req.password.length === 0) throw new UserError("Empty password")
 
-    return { }
+    try {
+        const result = await run(sql`
+            INSERT INTO Users (username, password)
+            VALUES (${req.username}, ${passwordHash})
+        `)
+
+        const userId = result.lastID
+        if (userId === undefined) throw new Error("failed to insert user")
+
+        return { }
+    } catch (err) {
+        if (err instanceof Error && err.message.includes("UNIQUE constraint failed: Users.username")) {
+            throw new UserError(`Username is taken: ${req.username}`, err)
+        } else {
+            throw err
+        }
+    }
 })
 
 apiRoute("POST /auth/login", async (req) => {

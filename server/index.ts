@@ -22,6 +22,13 @@ async function main() {
     app.use(express.json())
     app.use("/api", apiRouter)
 
+    const htmlPaths = [
+        "/", "/read/*", "/register",
+    ]
+    for (const path of htmlPaths) {
+        app.use(path, express.static("static/index.html"))
+    }
+
     const port = 5000
     app.listen(port, () => {
         console.log(`Listening on ${port}`)

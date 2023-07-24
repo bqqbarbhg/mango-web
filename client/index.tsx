@@ -1,11 +1,48 @@
-import ImageView from "./reader/image-view"
+/*
+import { SourceList } from "./components/settings/source-list"
+import { Source, globalState } from "./state"
 import { apiCall, setApiToken } from "./utils/api"
-import { createState, render, useState } from "kaiku"
+*/
 
-const globalState = createState({
-    apiToken: "",
+import { render } from "kaiku"
+import { globalState, parseRoute } from "./state"
+import { Index as Listing } from "./components/listing"
+import { Index as Reader } from "./components/reader"
+import { Index as Register } from "./components/register"
+import { Index as Login } from "./components/login"
+import { ErrorBar } from "./components/common/error-bar"
+
+window.addEventListener("popstate", () => {
+    globalState.route = parseRoute(window.location)
 })
 
+function Router() {
+    const route = globalState.route
+    if (route.path === "/register") {
+        return <Register />
+    } else if (globalState.user === null) {
+        return <Login />
+    } else if (route.path === "/") {
+        return <Listing />
+    } else if (route.path === "/read/") {
+        return <Reader />
+    } else {
+        return null
+    }
+}
+
+function Top() {
+    return <>
+        <Router/>
+        <ErrorBar/>
+    </>
+}
+
+const kaikuRoot = document.getElementById("kaiku-root")
+if (!kaikuRoot) throw new Error("could not find root")
+render(<Top />, kaikuRoot)
+
+/*
 async function testSettings() {
     try {
         const settings = await apiCall("GET /user/settings", { })
@@ -32,7 +69,11 @@ function IndexTop() {
                 password: state.password,
             })
             console.log(registerResult)
+        } catch (err) {
+            console.warn(err)
+        }
 
+        try {
             const loginResult = await apiCall("POST /auth/login", {
                 username: state.username,
                 password: state.password,
@@ -42,28 +83,13 @@ function IndexTop() {
 
             setApiToken(loginResult.token)
 
-            const loginResult2 = await apiCall("POST /auth/login", {
-                username: state.username,
-                password: state.password,
-                device: navigator.userAgent,
-            })
+            const sources = await apiCall("GET /sources", {})
 
-            const sessions = await apiCall("GET /auth/sessions", { })
-            console.log(sessions)
-
-            const logoutResult = await apiCall("DELETE /auth/sessions/:uuid", {
-                uuid: sessions.sessions[1]!.uuid,
-            })
-            console.log(logoutResult)
-
-            const sessions2 = await apiCall("GET /auth/sessions", { })
-            console.log(sessions2)
-
-            const logoutResult2 = await apiCall("DELETE /auth/sessions", { })
-            console.log(logoutResult2)
-
-            const sessions3 = await apiCall("GET /auth/sessions", { })
-            console.log(sessions3)
+            globalState.user = {
+                name: state.username,
+                sources: sources.sources,
+                volumes: [],
+            }
 
         } catch (e) {
             console.error(e)
@@ -72,8 +98,32 @@ function IndexTop() {
         }
     }
 
+    async function refreshSource(source: Source) {
+        try {
+            const r = await fetch(`${source.url}/index.json`)
+            const result = await r.json()
+            return result.volumes.map((volume: any) => ({
+                ...volume,
+                sourceUrl: `${source.url}/${volume.path}`,
+            }))
+        } catch (err) {
+            console.error(err)
+            return []
+        }
+    }
+
+    async function refreshSources() {
+        const user = globalState.user
+        if (!user) return
+        const sources = user.sources
+
+        const promises = sources.map(s => refreshSource(s))
+        const results = await Promise.all(promises)
+        const volumes = results.flat()
+        user.volumes = volumes
+    }
+
     return <>
-        <h1>{globalState.apiToken}</h1>
         <form onSubmit={register}>
             <div>
                 <label for="username">Username</label>
@@ -89,69 +139,21 @@ function IndexTop() {
                 <input type="submit" value="Register" />
             </div>
         </form>
+        <div>
+            <SourceList />
+        </div>
+        <div>
+            <button onClick={refreshSources}>Refresh</button>
+        </div>
+        <div>
+            {(globalState.user?.volumes ?? []).map(volume => (
+                <div>
+                    <h3>{volume.info.title.jp}</h3>
+                    <img src={`${volume.sourceUrl}/cover.jpg`} />
+                </div>
+            ))}
+        </div>
     </>
 }
-
-const kaikuRoot = document.getElementById("kaiku-root")
-if (!kaikuRoot) throw new Error("could not find root")
-render(<IndexTop />, kaikuRoot, globalState)
-
-/*
-
-const parent = document.querySelector("#main-parent") as HTMLElement
-const canvas = document.querySelector("#main-canvas") as HTMLCanvasElement
-const imageView = new ImageView(parent, canvas)
-
-canvas.addEventListener("touchstart", (e) => {
-    e.preventDefault()
-})
-
-canvas.addEventListener("pointerdown", (e) => {
-    e.preventDefault()
-})
-
-let targetX = 0
-let targetY = 0
-
-const image = new Image()
-image.addEventListener("load", (e) => {
-    imageView.setImage(image)
-})
-image.src = "test-image.png"
-
-canvas.addEventListener("pointermove", (e) => {
-    e.preventDefault()
-
-    targetX = e.clientX / 600 * 2 - 1.0
-    targetY = e.clientY / 600 * -2 + 1.0
-})
-
-function render() {
-    const alpha = 0.5
-    imageView.x = targetX*alpha + imageView.x*(1.0 - alpha)
-    imageView.y = targetY*alpha + imageView.y*(1.0 - alpha)
-    imageView.render()
-
-    window.requestAnimationFrame(render)
-}
-
-async function test() {
-    try {
-        await apiCall("POST /users", {
-            username: "test-user",
-            password: "test-pass",
-        })
-    } catch (err) {
-        console.error(err)
-    }
-
-    const result = await apiCall("GET /users/:id", {
-        id: "1"
-    })
-    console.log(result)
-}
-test()
-
-render()
 
 */

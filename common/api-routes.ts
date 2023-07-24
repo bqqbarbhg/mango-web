@@ -5,6 +5,11 @@ const Session = t.type({
     device: t.string,
 })
 
+const Source = t.type({
+    uuid: t.string,
+    url: t.string,
+})
+
 const apiRoutes = {
     // -- auth --
     "POST /auth/register": {
@@ -49,6 +54,28 @@ const apiRoutes = {
         res: t.type({
             ok: t.boolean,
         }),
+    },
+
+    // -- sources --
+    "GET /sources": {
+        req: t.type({ }),
+        res: t.type({
+            sources: t.array(Source),
+        }),
+    },
+    "POST /sources": {
+        req: t.type({
+            url: t.string,
+        }),
+        res: t.type({
+            ok: t.boolean,
+        }),
+    },
+    "DELETE /sources/:uuid": {
+        req: t.type({
+            uuid: t.string,
+        }),
+        res: t.type({ }),
     },
 
     // -- legacy -- 

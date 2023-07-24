@@ -6,3 +6,9 @@ body {
 #main-parent {
     overflow: hidden;
 }
+
+.viewer-parent {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
