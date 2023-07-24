@@ -15,6 +15,7 @@ const apiRoutes = {
     "POST /auth/register": {
         req: t.type({
             username: t.string,
+            email: t.string,
             password: t.string,
         }),
         res: t.type({ }),

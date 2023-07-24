@@ -1,6 +1,6 @@
 import { useState } from "kaiku"
 import { apiCall } from "../../utils/api"
-import { pushError } from "../../state"
+import { clearErrors, globalState, pushError } from "../../state"
 
 function LoginForm() {
     const state = useState({
@@ -18,8 +18,21 @@ function LoginForm() {
                 password: state.password,
                 device: navigator.userAgent,
             })
+
+            globalState.user = {
+                name: state.username,
+                token: user.token,
+                sources: [],
+                volumes: [],
+            }
+
+            localStorage.setItem("user", JSON.stringify({
+                name: state.username,
+                token: user.token,
+            }))
+            clearErrors()
         } catch (err) {
-            pushError("Failed to login", err)
+            pushError("Failed to login", err, { deduplicate: true })
         } finally {
             state.pending = false
         }

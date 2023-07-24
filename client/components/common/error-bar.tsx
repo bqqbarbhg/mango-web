@@ -1,30 +1,36 @@
-import { ErrorReport, MangoError, globalState } from "../../state";
+import { ErrorReport, MangoError, closeError, globalState } from "../../state";
 
-function ErrorEntry(props: { report: ErrorReport }) {
-    let message: string = `${props.report.context}: `
-    const error = props.report.error
+function ErrorEntry({ report }: { report: ErrorReport }) {
+    const error = report.error
+    let message: string = ""
     if (error instanceof MangoError) {
-        message += `${error.message} (${error.kind})`
+        message = error.message
     } else if (error instanceof Error) {
-        message += `${error.message} (internal)`
+        message = error.message
     } else {
-        message += error
+        message = error
     }
 
-    const id = props.report.id
     function deleteEntry() {
-        globalState.errors = globalState.errors.filter(e => e.id !== id)
+        report.closed = true
+        closeError(report.id)
     }
 
-    return <li>
-        <span>{message}</span>
-        <button onClick={deleteEntry}>X</button>
+    return <li className={{
+        "error-entry": true,
+        "error-closed": !report.opened || report.closed,
+    }}>
+        <div className="error-message">
+            <span className="error-cause">{report.context}: </span>
+            <span className="error-info">{message}</span>
+        </div>
+        <button className="error-button" onClick={deleteEntry}>X</button>
     </li>
 }
 
 export function ErrorBar() {
-    return <div>
-        <ul>
+    return <div className="error-parent">
+        <ul className="error-list">
             {globalState.errors.map(err => <ErrorEntry report={err} key={err.id} />)}
         </ul>
     </div>

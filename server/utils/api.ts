@@ -126,7 +126,7 @@ export function apiRouteAuth<Route extends keyof ApiRoutes>(
             SELECT id FROM Sessions WHERE id=${payload.sessionId}
         `)
         if (!verify || payload.sessionId !== verify.id) {
-            throw new Error("outdated session")
+            throw new HttpError(401, "outdated session")
         }
 
         return func(req, payload, ctx)

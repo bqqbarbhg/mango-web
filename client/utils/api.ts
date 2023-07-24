@@ -1,19 +1,22 @@
 import apiRoutes from "../../common/api-routes"
-import { MangoError, reportError } from "../state"
+import { MangoError, globalState } from "../state"
 import type { TypeOf } from "io-ts"
 
 type ApiRoutes = typeof apiRoutes
 
-let apiToken: string | null = null
+let implicitApiToken: string | null = null
 
 export function setApiToken(token: string | null) {
-    apiToken = token
+    implicitApiToken = token
 }
 
 export async function apiCall<Route extends keyof ApiRoutes>(
-    route: Route,
-    req: TypeOf<typeof apiRoutes[Route]["req"]>)
-       : Promise<TypeOf<typeof apiRoutes[Route]["res"]>> {
+        route: Route,
+        req: TypeOf<typeof apiRoutes[Route]["req"]>,
+        options: {
+            apiToken?: string
+        } = { }
+    ) : Promise<TypeOf<typeof apiRoutes[Route]["res"]>> {
 
     const [method, path] = route.split(" ", 2)
 
@@ -38,6 +41,7 @@ export async function apiCall<Route extends keyof ApiRoutes>(
         "Content-Type": "application/json",
     }
 
+    const apiToken = options.apiToken ?? implicitApiToken
     if (apiToken && apiToken !== "") {
         headers["Authorization"] = `Bearer ${apiToken}`
     }
@@ -49,7 +53,12 @@ export async function apiCall<Route extends keyof ApiRoutes>(
     })
     const json = await response.json()
 
-    console.log(json)
+    if (!options.apiToken && implicitApiToken && response.status === 401) {
+        implicitApiToken = null
+        globalState.user = null
+        localStorage.removeItem("user")
+    }
+
     if (response.status !== 200) {
         if (json.userError) {
             throw new MangoError("user", json.userError)

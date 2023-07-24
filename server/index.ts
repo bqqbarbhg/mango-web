@@ -23,7 +23,7 @@ async function main() {
     app.use("/api", apiRouter)
 
     const htmlPaths = [
-        "/", "/read/*", "/register",
+        "/", "/read/*", "/register", "/settings", "/settings/*",
     ]
     for (const path of htmlPaths) {
         app.use(path, express.static("static/index.html"))

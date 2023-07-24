@@ -5,6 +5,7 @@ import { pushError } from "../../state"
 function RegisterForm() {
     type State = {
         username: string
+        email: string
         password: string
         passwordCheck: string
         passwordCheckRef: { current?: HTMLInputElement }
@@ -13,6 +14,7 @@ function RegisterForm() {
 
     const state = useState<State>({
         username: "",
+        email: "",
         password: "",
         passwordCheck: "",
         passwordCheckRef: { },
@@ -33,13 +35,14 @@ function RegisterForm() {
             state.pending = true
             const user = await apiCall("POST /auth/register", {
                 username: state.username,
+                email: state.email,
                 password: state.password,
             })
 
             // window.location.href = "/"
         } catch (err) {
             console.log(err)
-            pushError("Failed to register", err)
+            pushError("Failed to register", err, { deduplicate: true })
         } finally {
             state.pending = false
         }
@@ -49,14 +52,26 @@ function RegisterForm() {
         <div>
             <input
                 type="text"
-                id="login-username"
+                id="register-username"
                 name="username"
                 value={() => state.username}
                 onInput={(e: any) => state.username = e.target.value}
                 disabled={state.pending}
                 required
             />
-            <label for="login-username">Username</label>
+            <label for="register-username">Username</label>
+        </div>
+        <div>
+            <input
+                type="email"
+                id="register-email"
+                name="email"
+                value={() => state.email}
+                onInput={(e: any) => state.email = e.target.value}
+                disabled={state.pending}
+                required
+            />
+            <label for="register-email">Email</label>
         </div>
         <div>
             <input
@@ -76,7 +91,7 @@ function RegisterForm() {
         <div>
             <input
                 type="password"
-                id="login-password-check"
+                id="register-password-check"
                 name="password-check"
                 value={() => state.passwordCheck}
                 onInput={(e: any) => {
@@ -87,7 +102,7 @@ function RegisterForm() {
                 ref={state.passwordCheckRef}
                 required
             />
-            <label for="login-password-check">Password (check)</label>
+            <label for="register-password-check">Password (check)</label>
         </div>
         <div>
             <input
