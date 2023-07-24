@@ -1,5 +1,6 @@
 import { useState } from "kaiku"
 import { apiCall } from "../../utils/api"
+import { pushError } from "../../state"
 
 function LoginForm() {
     const state = useState({
@@ -12,13 +13,13 @@ function LoginForm() {
         e.preventDefault()
         try {
             state.pending = true
-            const user = apiCall("POST /auth/login", {
+            const user = await apiCall("POST /auth/login", {
                 username: state.username,
                 password: state.password,
                 device: navigator.userAgent,
             })
         } catch (err) {
-            console.error(err)
+            pushError("Failed to login", err)
         } finally {
             state.pending = false
         }

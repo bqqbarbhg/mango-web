@@ -27,6 +27,7 @@ export type ErrorReport = {
     context: string
     error: Error | string
     time: number
+    id: string
 }
 
 export type RouteIndex = { path: "/" }
@@ -68,8 +69,13 @@ export class MangoError extends Error {
     }
 }
 
+let errorIdCounter = 0
 export function pushError(context: string, error: Error | string) {
-    globalState.errors.push({ context, error, time: Date.now() })
+    globalState.errors.push({
+        context, error,
+        time: Date.now(),
+        id: (++errorIdCounter).toString(),
+    })
 }
 
 export const globalState = createState({
