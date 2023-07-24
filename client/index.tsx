@@ -13,6 +13,7 @@ import { Index as Login } from "./components/login"
 import { Index as Settings } from "./components/settings"
 import { ErrorBar } from "./components/common/error-bar"
 import { setApiToken } from "./utils/api"
+import { AppFrame } from "./components/common/app-frame"
 
 window.addEventListener("popstate", () => {
     globalState.route = parseRoute(window.location)
@@ -29,11 +30,11 @@ function Router() {
     } else if (globalState.user === null) {
         return <Login />
     } else if (route.path === "/") {
-        return <Listing />
+        return <AppFrame><Listing /></AppFrame>
     } else if (route.path === "/read/") {
         return <Reader />
     } else if (route.path === "/settings/") {
-        return <Settings />
+        return <AppFrame><Settings /></AppFrame>
     } else {
         return null
     }

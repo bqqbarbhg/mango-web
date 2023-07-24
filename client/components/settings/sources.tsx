@@ -1,15 +1,19 @@
-import { useState } from "kaiku";
-import { globalState } from "../../state";
+import { useEffect, useState } from "kaiku";
+import { globalState, pushError } from "../../state";
 import { apiCall } from "../../utils/api";
 
 async function fetchSources() {
     if (globalState.user) {
-        const sources = await apiCall("GET /sources", {})
-        globalState.user.sources = sources.sources
+        try {
+            const sources = await apiCall("GET /sources", {})
+            globalState.user.sources = sources.sources
+        } catch (err) {
+            pushError("Failed to fetch sources", err, { deduplicate: true })
+        }
     }
 }
 
-export function SourceList() {
+export function Sources() {
     const user = globalState.user
     if (!user) return null
 
@@ -18,7 +22,7 @@ export function SourceList() {
             await apiCall("POST /sources", { url })
             await fetchSources()
         } catch (err) {
-            console.error(err)
+            pushError("Failed to add source", err, { deduplicate: true })
         }
     }
 
@@ -27,9 +31,11 @@ export function SourceList() {
             await apiCall("DELETE /sources/:uuid", { uuid })
             await fetchSources()
         } catch (err) {
-            console.error(err)
+            pushError("Failed to delete source", err, { deduplicate: true })
         }
     }
+
+    useEffect(() => { fetchSources() })
 
     const state = useState({
         url: "",

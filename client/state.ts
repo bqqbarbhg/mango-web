@@ -1,5 +1,6 @@
 import { createState } from "kaiku"
 import * as V from "./utils/validation"
+import { setApiToken } from "./utils/api"
 
 export type Source = {
     url: string
@@ -128,6 +129,12 @@ export function clearErrors() {
     globalState.errors = []
 }
 
+export function clearUser() {
+    globalState.user = null
+    localStorage.removeItem("user")
+    setApiToken(null)
+}
+
 const userSpec = V.type("user", V.object({
     name: V.string,
     token: V.string,
@@ -153,6 +160,12 @@ function loadUser(): User | null {
         console.log(err)
         return null
     }
+}
+
+export function navigateTo(path: string) {
+    clearErrors()
+    window.history.pushState(null, "", path)
+    globalState.route = parseRoute(window.location)
 }
 
 export const globalState = createState<State>({

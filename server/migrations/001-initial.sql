@@ -22,7 +22,9 @@ CREATE TABLE Sources (
     id INTEGER PRIMARY KEY,
     userId INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
     url TEXT NOT NULL,
-    uuid TEXT NOT NULL UNIQUE
+    uuid TEXT NOT NULL UNIQUE,
+
+    UNIQUE(userId, url)
 );
 
 --------------------------------------------------------------------------------

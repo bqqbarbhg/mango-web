@@ -1,6 +1,6 @@
 import { useState } from "kaiku"
 import { apiCall } from "../../utils/api"
-import { pushError } from "../../state"
+import { navigateTo, pushError } from "../../state"
 
 function RegisterForm() {
     type State = {
@@ -33,13 +33,13 @@ function RegisterForm() {
 
         try {
             state.pending = true
-            const user = await apiCall("POST /auth/register", {
+            await apiCall("POST /auth/register", {
                 username: state.username,
                 email: state.email,
                 password: state.password,
             })
 
-            // window.location.href = "/"
+            navigateTo("/")
         } catch (err) {
             console.log(err)
             pushError("Failed to register", err, { deduplicate: true })

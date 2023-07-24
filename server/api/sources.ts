@@ -1,4 +1,4 @@
-import { apiRouteAuth } from "../utils/api"
+import { UserError, apiRouteAuth } from "../utils/api"
 import * as t from "io-ts"
 import sql from "sql-template-strings"
 import { run, select, selectAll } from "../utils/database"
@@ -17,6 +17,7 @@ apiRouteAuth("GET /sources", async (req, user) => {
 })
 
 apiRouteAuth("POST /sources", async (req, user) => {
+    if (req.url === "") throw new UserError("Source URL cannot be empty")
     const result = await run(sql`
         INSERT INTO Sources (userId, url, uuid)
         VALUES (${user.userId}, ${req.url}, ${uuidv4()})

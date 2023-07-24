@@ -1,5 +1,5 @@
 import apiRoutes from "../../common/api-routes"
-import { MangoError, globalState } from "../state"
+import { MangoError, clearUser, globalState } from "../state"
 import type { TypeOf } from "io-ts"
 
 type ApiRoutes = typeof apiRoutes
@@ -55,8 +55,7 @@ export async function apiCall<Route extends keyof ApiRoutes>(
 
     if (!options.apiToken && implicitApiToken && response.status === 401) {
         implicitApiToken = null
-        globalState.user = null
-        localStorage.removeItem("user")
+        clearUser()
     }
 
     if (response.status !== 200) {
