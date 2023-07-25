@@ -27,6 +27,17 @@ CREATE TABLE Sources (
     UNIQUE(userId, url)
 );
 
+CREATE TABLE VolumeState (
+    id INTEGER PRIMARY KEY,
+    userId INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+    path TEXT NOT NULL,
+    latestPage INTEGER,
+    latestSessionId INTEGER REFERENCES Sessions(id) ON DELETE SET NULL,
+    latestSourceId INTEGER REFERENCES Sources(id) ON DELETE SET NULL,
+
+    UNIQUE(userId, path)
+);
+
 --------------------------------------------------------------------------------
 -- Down
 --------------------------------------------------------------------------------
@@ -34,3 +45,4 @@ CREATE TABLE Sources (
 DROP TABLE Users;
 DROP TABLE Sessions;
 DROP TABLE Sources;
+DROP TABLE VolumeState;

@@ -7,16 +7,27 @@ export type Source = {
     uuid: string
 }
 
+export const VolumeInfo = V.type("VolumeInfo", V.object({
+    path: V.string,
+    info: V.object({
+        title: V.openObject({
+            en: V.string,
+        }, V.string),
+        volume: V.union([V.integer, V.toNull]),
+        numPages: V.integer,
+    }),
+}))
+declare type VolumeInfo = V.ValidatorResult<typeof VolumeInfo>
+
+export const SourceIndex = V.type("SourceIndex", V.object({
+    volumes: V.array(VolumeInfo)
+}))
+
+
 export type Volume = {
     sourceUrl: string
-    info: {
-        path: string
-        title: {
-            en: string,
-            jp: string,
-        }
-        volume: number
-    }
+    sourceUuid: string
+    volume: VolumeInfo
 }
 
 export type User = {
@@ -37,7 +48,7 @@ export type ErrorReport = {
 
 export type RouteIndex = { path: "/" }
 export type RouteRegister = { path: "/register" }
-export type RouteRead = { path: "/read/", id: string }
+export type RouteRead = { path: "/read/", id: string, source: string | null }
 export type RouteSettings = { path: "/settings/", tab: string | null }
 export type Route = RouteIndex | RouteRegister | RouteSettings | RouteRead
 
@@ -51,6 +62,8 @@ export function parseRoute(location: Location): Route {
     const path = location.pathname
     let m
 
+    const urlParams = new URLSearchParams(location.search)
+
     m = path.match(/^\/?$/)
     if (m) return { path: "/" }
 
@@ -58,7 +71,7 @@ export function parseRoute(location: Location): Route {
     if (m) return { path: "/register" }
 
     m = path.match(/^\/read\/(.*)$/)
-    if (m) return { path: "/read/", id: m[1]! }
+    if (m) return { path: "/read/", id: m[1]!, source: urlParams.get("source") }
 
     m = path.match(/^\/settings\/?$/)
     if (m) return { path: "/settings/", tab: null }
@@ -69,7 +82,7 @@ export function parseRoute(location: Location): Route {
     return { path: "/" }
 }
 
-export type ErrorKind = "error" | "api" | "user"
+export type ErrorKind = "error" | "fetch" | "api" | "user"
 
 export class MangoError extends Error {
     kind: ErrorKind
@@ -120,13 +133,13 @@ export function closeError(id: string) {
         err.closed = true
         setTimeout(() => {
             globalState.errors = globalState.errors.filter(err => err.id !== id)
-            console.log("remove")
         }, 300)
     }
 }
 
 export function clearErrors() {
     globalState.errors = []
+    console.error("UH")
 }
 
 export function clearUser() {
@@ -173,3 +186,7 @@ export const globalState = createState<State>({
     errors: [],
     user: loadUser(),
 })
+
+if (process.env.NODE_ENV !== "production") {
+    (window as any).globalState = globalState
+}

@@ -25,7 +25,7 @@ export async function apiCall<Route extends keyof ApiRoutes>(
     let finalPath = "/api"
     for (const part of path!.substring(1).split("/")) {
         if (part.startsWith(":")) {
-            const paramName = part.substring(1)
+            const paramName = part.substring(part.startsWith(":*") ? 2 : 1)
             const param = body[paramName]
             if (typeof param !== "string" && typeof param !== "number") {
                 throw new Error(`Bad parameter for ${paramName}: ${param}`)
@@ -46,23 +46,29 @@ export async function apiCall<Route extends keyof ApiRoutes>(
         headers["Authorization"] = `Bearer ${apiToken}`
     }
 
-    const hasBody = method === "POST"
-    const response = await fetch(finalPath, {
-        method, headers,
-        body: hasBody ? JSON.stringify(body) : undefined,
-    })
-    const json = await response.json()
+    let response: Response
+    let json: any
+    try {
+        const hasBody = method === "POST"
+        response = await fetch(finalPath, {
+            method, headers,
+            body: hasBody ? JSON.stringify(body) : undefined,
+        })
+        json = await response.json()
 
-    if (!options.apiToken && implicitApiToken && response.status === 401) {
-        implicitApiToken = null
-        clearUser()
+        if (!options.apiToken && implicitApiToken && response.status === 401) {
+            implicitApiToken = null
+            clearUser()
+        }
+    } catch (err) {
+        throw new MangoError("fetch", `${method} ${finalPath}: ${err.message ?? ""}`)
     }
 
     if (response.status !== 200) {
         if (json.userError) {
             throw new MangoError("user", json.userError)
         } else {
-            throw new MangoError("api", json.error ?? "")
+            throw new MangoError("api", `${method} ${finalPath}: ${json.error ?? ""}`)
         }
     } else {
         return json

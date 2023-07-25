@@ -7,6 +7,9 @@ type Props = {
     children: Child|Child[]
 }
 export function AppFrame(props: Props) {
+    const user = globalState.user
+    if (!user) return null
+
     async function logout() {
         try {
             await apiCall("POST /auth/logout", {})
@@ -20,6 +23,7 @@ export function AppFrame(props: Props) {
         <nav>
             <Link href="/">List</Link>
             <Link href="/settings">Settings</Link>
+            <span>{user.name}</span>
             <button onClick={logout}>Log out</button>
         </nav>
         <main>

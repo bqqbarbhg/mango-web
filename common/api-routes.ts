@@ -79,21 +79,40 @@ const apiRoutes = {
         res: t.type({ }),
     },
 
-    // -- legacy -- 
-    "GET /users/:id": {
+    // -- volumes --
+    "POST /read/:*path": {
         req: t.type({
-            id: t.string,
+            path: t.string,
+            sourceUuid: t.union([t.string, t.null]), // TODO: Undefined
+            page: t.number,
         }),
         res: t.type({
-            name: t.string,
+            ok: t.boolean,
         }),
     },
-    "GET /user/settings": {
-        req: t.type({}),
+    "GET /read/:*path": {
+        req: t.type({
+            path: t.string,
+        }),
         res: t.type({
-            test: t.string,
+            result: t.union([
+                t.type({
+                    source: t.union([
+                        t.type({
+                            uuid: t.string,
+                            url: t.string,
+                        }),
+                        t.null,
+                    ]),
+                    page: t.union([t.number, t.null]),
+                }),
+                t.null,
+            ]),
         }),
     },
+
+
+
 } as const
 
 export default apiRoutes

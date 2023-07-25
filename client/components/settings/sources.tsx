@@ -1,17 +1,7 @@
 import { useEffect, useState } from "kaiku";
 import { globalState, pushError } from "../../state";
 import { apiCall } from "../../utils/api";
-
-async function fetchSources() {
-    if (globalState.user) {
-        try {
-            const sources = await apiCall("GET /sources", {})
-            globalState.user.sources = sources.sources
-        } catch (err) {
-            pushError("Failed to fetch sources", err, { deduplicate: true })
-        }
-    }
-}
+import { fetchSources } from "../../utils/fetching";
 
 export function Sources() {
     const user = globalState.user
@@ -35,11 +25,16 @@ export function Sources() {
         }
     }
 
-    useEffect(() => { fetchSources() })
 
     const state = useState({
         url: "",
+        loaded: false,
     })
+
+    if (!state.loaded) {
+        fetchSources()
+        state.loaded = true
+    }
 
     function sourceSubmit(e: any) {
         e.preventDefault()

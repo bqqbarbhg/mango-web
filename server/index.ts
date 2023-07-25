@@ -3,6 +3,7 @@ import { setupDatabase } from "./utils/database"
 import { parseArgs } from "node:util"
 import "./api"
 import { apiRouter } from "./utils/api"
+import { RequestHandler } from "express"
 
 async function main() {
     const { values: args } = parseArgs({
@@ -16,6 +17,13 @@ async function main() {
     })
 
     const app = express()
+
+    const notFound: RequestHandler = (_, res) => {
+        res.status(404)
+        res.json({ error: "not found" })
+    }
+
+    apiRouter.all("*", notFound)
 
     app.use(express.static("build"))
     app.use(express.static("static"))

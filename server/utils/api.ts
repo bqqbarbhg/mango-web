@@ -42,16 +42,27 @@ export function apiRoute<Route extends keyof ApiRoutes>(
     func: (req: TypeOf<typeof apiRoutes[Route]["req"]>, ctx: ApiContext)
         => Promise<TypeOf<typeof apiRoutes[Route]["res"]>>) {
 
-    const params = route.split("/")
+    let [method, path] = route.split(" ", 2) as [string, string]
+
+    const params = path.split("/")
         .filter(p => p.startsWith(":"))
         .map(p => p.substring(1))
+
+    const suffixIndex = path.indexOf(":*")
+    if (suffixIndex >= 0) {
+        path = path.substring(0, suffixIndex) + "*"
+    }
 
     const { req: validateReq, res: validateRes } = apiRoutes[route]
 
     const handler: RequestHandler = (req, res) => {
         const body = req.body ?? { }
         for (const param of params) {
-            body[param] = req.params[param]
+            if (param.startsWith("*")) {
+                body[param.substring(1)] = req.params["0"]
+            } else {
+                body[param] = req.params[param]
+            }
         }
         const reqBody = validateReq.decode(body)
 
@@ -77,13 +88,15 @@ export function apiRoute<Route extends keyof ApiRoutes>(
                     } else {
                         res.status(400)
                     }
+
+                    const showError = process.env.NODE_ENV !== "production"
                     if (err instanceof UserError) {
                         res.json({
                             userError: err.message ?? "",
-                            error: err.inner?.message ?? "",
+                            error: showError ? (err.inner?.message ?? ""): "",
                         })
                     } else {
-                        res.json({ error: err.message ?? "" })
+                        res.json({ error: showError ? (err.message ?? "") : "" })
                     }
                 })
         } else {
@@ -92,13 +105,12 @@ export function apiRoute<Route extends keyof ApiRoutes>(
         }
     }
 
-    const [method, path] = route.split(" ", 2)
     if (method === "GET") {
-        apiRouter.get(path!, handler)
+        apiRouter.get(path, handler)
     } else if (method === "DELETE") {
-        apiRouter.delete(path!, handler)
+        apiRouter.delete(path, handler)
     } else if (method === "POST") {
-        apiRouter.post(path!, handler)
+        apiRouter.post(path, handler)
     } else {
         throw new Error(`Unknown method in route: ${route}`)
     }

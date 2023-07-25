@@ -30,9 +30,11 @@ function Session(props: { session: Session, reload: () => any }) {
 export function Sessions() {
     type State = {
         sessions: Session[]
+        loaded: boolean
     }
     const state = useState<State>({
         sessions: [],
+        loaded: false,
     })
 
     async function reloadSessions() {
@@ -44,7 +46,10 @@ export function Sessions() {
         }
     }
 
-    useEffect(() => { reloadSessions() })
+    if (!state.loaded) {
+        reloadSessions()
+        state.loaded = true
+    }
 
     async function logoutAll() {
         try {
