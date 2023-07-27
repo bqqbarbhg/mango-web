@@ -561,8 +561,6 @@ export class PanZoom {
 
         clampedViewport.x = viewBounds.minX - this.clampEdge(viewBounds.minX - viewport.x)
         clampedViewport.x = this.clampEdge(clampedViewport.x - viewBounds.maxX) + viewBounds.maxX
-        clampedViewport.y = viewport.y
-        // console.log(clampedViewport.x - viewBounds.maxY)
         clampedViewport.y = viewBounds.minY - this.clampEdge(viewBounds.minY - viewport.y)
         clampedViewport.y = this.clampEdge(clampedViewport.y - viewBounds.maxY) + viewBounds.maxY
 
