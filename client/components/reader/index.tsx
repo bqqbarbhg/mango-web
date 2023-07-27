@@ -1,8 +1,9 @@
 import { immutable, useState, unwrap, useEffect } from "kaiku";
 import { RouteRead, globalState, navigateTo, pushError } from "../../state";
-import ImageView from "../../reader/image-view";
+import ImageView from "../../reader/image-view-webgl";
 import { apiCall } from "../../utils/api";
 import { fetchSources, refreshVolumes } from "../../utils/fetching";
+import { Reader } from "./reader";
 
 function Viewer() {
     type State = {
@@ -123,38 +124,5 @@ export function Index() {
         state.pending = false
     })
 
-    /*
-
-    async function update() {
-        const user = globalState.user
-        if (!user) return
-
-        try {
-            let sourceUuid = route.source
-
-            let volume = user.volumes.find(v => v.volume.path === path) ?? null
-            if (!volume && sourceUuid) {
-                let source = user.sources.find(s => s.uuid === sourceUuid)
-                if (!source) {
-                }
-            }
-
-            const result = await apiCall("POST /read", {
-                sourceUuid: route.source,
-                path,
-            })
-
-        } catch (err) {
-            pushError("Failed to update", err, { deduplicate: true })
-        }
-        state.pending = false
-    }
-
-    useEffect(() => {
-        update()
-    })
-
-    */
-
-    return state.pending ? <Loader /> : <Viewer />
+    return state.pending ? <Loader /> : <Reader />
 }

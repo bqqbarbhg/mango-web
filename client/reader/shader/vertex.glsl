@@ -18,6 +18,7 @@ void main()
     else                 uv = vec2(0.0, 0.0);
 
     vec2 pos = basePosition + uv * quadScale;
+    pos.y = 1.0 - pos.y;
     gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
     v_uv = uv;
 }

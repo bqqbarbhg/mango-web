@@ -80,4 +80,12 @@ body {
     overflow: hidden;
     width: 100%;
     height: 100%;
+    touch-action: none;
+}
+
+.temp-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
 }
