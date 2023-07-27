@@ -534,8 +534,8 @@ export class PanZoom {
         const scale = this.viewport.scale
         const childWidth = this.contentWidth * scale
         const childHeight = this.contentHeight * scale
-        const paddingWidth = childWidth * 0.25
-        const paddingHeight = childHeight * 0.25
+        const paddingWidth = childWidth * 0.5
+        const paddingHeight = childHeight * 0.5
 
         if (parentWidth < childWidth) {
             viewBounds.minX = parentWidth - childWidth - paddingWidth

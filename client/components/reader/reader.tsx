@@ -36,7 +36,6 @@ export class Reader extends Component<Props> {
 
                 image.src = "/test-image.png"
                 image.addEventListener("load", () => {
-                    console.log("LOAD")
                     updateSize()
                     this.panZoom!.resetView()
                     this.imageView.setViewport(this.panZoom!.viewport)
