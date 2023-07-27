@@ -53,6 +53,12 @@ function lerp(a: number, b: number, t: number) {
     return a * (1.0 - t) + b * t
 }
 
+function absLerp(a: number, b: number, t: number, absT: number) {
+    const v = a * (1.0 - t) + b * t
+    const d = b - v
+    return v + clamp(d, -absT, absT)
+}
+
 function eerp(a: number, b: number, t: number) {
     return Math.pow(a, 1.0 - t) * Math.pow(b, t)
 }
@@ -89,6 +95,13 @@ type ActionSingleZoom = {
     scale: number
 }
 
+type ViewBounds = {
+    minX: number
+    minY: number
+    maxX: number
+    maxY: number
+}
+
 type Action = ActionHold | ActionPan | ActionZoom | ActionSingleZoom
 
 const sampleTargetDt = 1.0 / 45.0
@@ -104,6 +117,8 @@ export class PanZoom {
     lastClickY: number = -1.0
     action: Action | null = null
     viewport: Viewport = { x: 0, y: 0, scale: 1 }
+    clampedViewport: Viewport = { x: 0, y: 0, scale: 1 }
+    viewBounds: ViewBounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
     animationFrameToken: number | null = null
     parentWidth: number = 1
     parentHeight: number = 1
@@ -360,6 +375,7 @@ export class PanZoom {
         const release = this.release
         if (!release) return
 
+        const { viewBounds } = this
         const dt = releaseFixedDt
 
         release.prevX = release.nextX
@@ -377,8 +393,28 @@ export class PanZoom {
         release.velocityX -= clamp(release.velocityX, -decay*dt, decay*dt)
         release.velocityY -= clamp(release.velocityY, -decay*dt, decay*dt)
 
+        let inBounds = true
+        const boundAlpha = 0.5
+        const boundAbs = 500 * releaseFixedDt
+        if (release.nextX < viewBounds.minX) {
+            release.nextX = absLerp(release.nextX, viewBounds.minX, boundAlpha, boundAbs)
+            inBounds = false
+        }
+        if (release.nextX > viewBounds.maxX) {
+            release.nextX = absLerp(release.nextX, viewBounds.maxX, boundAlpha, boundAbs)
+            inBounds = false
+        }
+        if (release.nextY < viewBounds.minY) {
+            release.nextY = absLerp(release.nextY, viewBounds.minY, boundAlpha, boundAbs)
+            inBounds = false
+        }
+        if (release.nextY > viewBounds.maxY) {
+            release.nextY = absLerp(release.nextY, viewBounds.maxY, boundAlpha, boundAbs)
+            inBounds = false
+        }
+
         const vel = release.velocityX*release.velocityX + release.velocityY*release.velocityY
-        if (vel < 0.01) {
+        if (vel < 0.01 && inBounds) {
             this.release = null
         }
     }
@@ -485,6 +521,54 @@ export class PanZoom {
         }
     }
 
+    clampEdge(amount: number): number {
+        if (amount <= 0) return amount
+        const weight = 0.001
+        const ratio = 1.5
+        return (1.0 - Math.exp(weight * -amount)) / (weight * ratio)
+    }
+
+    updateViewBounds() {
+        const { parentWidth, parentHeight, viewBounds } = this
+
+        const scale = this.viewport.scale
+        const childWidth = this.contentWidth * scale
+        const childHeight = this.contentHeight * scale
+        const paddingWidth = childWidth * 0.25
+        const paddingHeight = childHeight * 0.25
+
+        if (parentWidth < childWidth) {
+            viewBounds.minX = parentWidth - childWidth - paddingWidth
+            viewBounds.maxX = 0 + paddingWidth
+        } else {
+            viewBounds.minX = 0 - paddingWidth
+            viewBounds.maxX = parentWidth - childWidth + paddingWidth
+        }
+
+        if (parentHeight < childHeight) {
+            viewBounds.minY = parentHeight - childHeight - paddingHeight
+            viewBounds.maxY = 0 + paddingHeight
+        } else {
+            viewBounds.minY = 0 - paddingHeight
+            viewBounds.maxY = parentHeight - childHeight + paddingHeight
+        }
+        console.log(viewBounds)
+    }
+
+    clampViewport() {
+        const { viewBounds, clampedViewport, viewport } = this
+        this.updateViewBounds()
+
+        clampedViewport.x = viewBounds.minX - this.clampEdge(viewBounds.minX - viewport.x)
+        clampedViewport.x = this.clampEdge(clampedViewport.x - viewBounds.maxX) + viewBounds.maxX
+        clampedViewport.y = viewport.y
+        // console.log(clampedViewport.x - viewBounds.maxY)
+        clampedViewport.y = viewBounds.minY - this.clampEdge(viewBounds.minY - viewport.y)
+        clampedViewport.y = this.clampEdge(clampedViewport.y - viewBounds.maxY) + viewBounds.maxY
+
+        clampedViewport.scale = viewport.scale
+    }
+
     setBounds(parentWidth: number, parentHeight: number, contentWidth: number, contentHeight: number) {
         this.parentWidth = parentWidth > 1 ? parentWidth : 1
         this.parentHeight = parentHeight > 1 ? parentHeight : 1
@@ -499,6 +583,7 @@ export class PanZoom {
         this.viewport.x = parentWidth * 0.5 - contentWidth * 0.5 * scale
         this.viewport.y = parentHeight * 0.5 - contentHeight * 0.5 * scale
         this.viewport.scale = scale
+        this.clampViewport()
     }
 
     requestAnimationFrame() {
@@ -511,7 +596,8 @@ export class PanZoom {
         this.animationFrameToken = null
 
         this.updateAction()
-        this.viewportCallback(this.viewport)
+        this.clampViewport()
+        this.viewportCallback(this.clampedViewport)
 
         if (this.action !== null || this.release !== null) {
             this.requestAnimationFrame()
