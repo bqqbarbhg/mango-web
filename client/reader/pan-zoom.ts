@@ -394,8 +394,8 @@ export class PanZoom {
         release.velocityY -= clamp(release.velocityY, -decay*dt, decay*dt)
 
         let inBounds = true
-        const boundAlpha = 0.5
-        const boundAbs = 500 * releaseFixedDt
+        const boundAlpha = 0.35
+        const boundAbs = 200 * releaseFixedDt
         if (release.nextX < viewBounds.minX) {
             release.nextX = absLerp(release.nextX, viewBounds.minX, boundAlpha, boundAbs)
             inBounds = false
