@@ -1,4 +1,4 @@
-import { Viewport, doubleTapDistance, doubleTapThreshold } from "./common"
+import { Viewport, clickTime, doubleTapDistance, doubleTapThreshold } from "./common"
 
 type TouchId = number | string
 type Touch = {
@@ -13,6 +13,7 @@ type Touch = {
     velocityY: number
     eventPositionX: number
     eventPositionY: number
+    startTime: number
     eventTime: number
     sampleTime: number
     samplePositionX: number
@@ -95,6 +96,14 @@ type ActionSingleZoom = {
     scale: number
 }
 
+type ActionInterpolate = {
+    action: "interpolate"
+    src: Viewport
+    dst: Viewport
+    startTime: number
+    duration: number
+}
+
 type ViewBounds = {
     minX: number
     minY: number
@@ -102,7 +111,13 @@ type ViewBounds = {
     maxY: number
 }
 
-type Action = ActionHold | ActionPan | ActionZoom | ActionSingleZoom
+export type ClickInfo = {
+    x: number
+    y: number
+    doubleClick: boolean
+}
+
+type Action = ActionHold | ActionPan | ActionZoom | ActionSingleZoom | ActionInterpolate
 
 const sampleTargetDt = 1.0 / 45.0
 const releaseFixedDt = 1.0 / 30.0
@@ -124,9 +139,14 @@ export class PanZoom {
     parentHeight: number = 1
     contentWidth: number = 1
     contentHeight: number = 1
+    minScale: number = 1
+    maxScale: number = 1
+    clickTimeout: number | null = null
 
     // Callbacks
     viewportCallback: (viewport: Viewport) => void = () => {}
+    clickCallback: (click: ClickInfo) => boolean = () => false
+    clickTimeoutCallback: () => boolean = () => false
 
     constructor(element: HTMLElement, debug?: IPanZoomDebug) {
 
@@ -166,6 +186,7 @@ export class PanZoom {
             samplePositionY: y,
             prevPositionX: x,
             prevPositionY: y,
+            startTime: time,
             eventTime: time,
             sampleTime: time,
             prevTime: time,
@@ -196,6 +217,8 @@ export class PanZoom {
 
         this.lastReleaseTime = -1
 
+        this.cancelClickTimeout()
+        this.updateAction()
         this.requestAnimationFrame()
     }
 
@@ -220,6 +243,7 @@ export class PanZoom {
         touch.eventPositionY = y
         touch.eventTime = time
 
+        this.updateAction()
         this.requestAnimationFrame()
     }
 
@@ -253,13 +277,48 @@ export class PanZoom {
                 }
 
                 this.touches.splice(index, 1)
+
+                const isClick = time - touch.startTime <= clickTime
+                if (isClick && this.touches.length === 0 && this.action?.action === "hold") {
+                    const doubleClick = touch.doubleTap
+                    const consumed = this.clickCallback({
+                        x: (touch.eventPositionX - this.clampedViewport.x) / this.clampedViewport.scale,
+                        y: (touch.eventPositionY - this.clampedViewport.y) / this.clampedViewport.scale,
+                        doubleClick,
+                    })
+
+                    if (!consumed) {
+                        this.cancelClickTimeout()
+                        if (touch.doubleTap) {
+                            this.doubleTapView(touch.eventPositionX, touch.eventPositionY)
+                        } else {
+                            this.clickTimeout = window.setTimeout(this.onClickTimeout, doubleTapThreshold * 1000)
+                        }
+                    }
+                }
+
                 break
             }
             index++
         }
-        this.lastReleaseTime = time
 
+        this.lastReleaseTime = time
+        this.updateAction()
         this.requestAnimationFrame()
+    }
+
+    cancelClickTimeout() {
+        if (this.clickTimeout !== null) {
+            window.clearTimeout(this.clickTimeout)
+            this.clickTimeout = null
+        }
+    }
+
+    onClickTimeout = () => {
+        if (this.clickTimeout === null) return
+        this.clickTimeout = null
+
+        console.log("CLICK MISSED")
     }
 
     onMouseDown = (e: MouseEvent) => {
@@ -368,7 +427,7 @@ export class PanZoom {
     }
 
     clampScale(scale: number): number {
-        return scale
+        return clamp(scale, this.minScale, this.maxScale)
     }
 
     updateRelease() {
@@ -497,7 +556,23 @@ export class PanZoom {
             this.viewport.x = midX - action.localX * this.viewport.scale
             this.viewport.y = midY - action.localY * this.viewport.scale
         } else {
-            this.action = null
+            const { action } = this
+            if (action?.action === "interpolate") {
+                const t = clamp((time - action.startTime) / action.duration, 0.0, 1.0)
+                const u = t * t * (3.0 - 2.0 * t)
+
+                const { src, dst } = action
+                this.viewport.x = lerp(src.x, dst.x, u)
+                this.viewport.y = lerp(src.y, dst.y, u)
+                this.viewport.scale = lerp(src.scale, dst.scale, u)
+
+                this.release = null
+                if (t === 1) {
+                    this.action = null
+                }
+            } else {
+                this.action = null
+            }
 
             const release = this.release
             if (release) {
@@ -552,7 +627,6 @@ export class PanZoom {
             viewBounds.minY = 0 - paddingHeight
             viewBounds.maxY = parentHeight - childHeight + paddingHeight
         }
-        console.log(viewBounds)
     }
 
     clampViewport() {
@@ -572,16 +646,70 @@ export class PanZoom {
         this.parentHeight = parentHeight > 1 ? parentHeight : 1
         this.contentWidth = contentWidth > 1 ? contentWidth : 1
         this.contentHeight = contentHeight > 1 ? contentHeight : 1
+
+        const minScale = Math.min(this.parentWidth / this.contentWidth, this.parentHeight / this.contentHeight)
+        const maxScale = Math.max(this.parentWidth / this.contentWidth, this.parentHeight / this.contentHeight)
+        this.minScale = minScale * 0.1
+        this.maxScale = maxScale * 10.0
+    }
+
+    getResetViewport() {
+        const { parentWidth, parentHeight, contentWidth, contentHeight } = this
+        const scale = Math.min(parentWidth / contentWidth, parentHeight / contentHeight)
+        return {
+            x: parentWidth * 0.5 - contentWidth * 0.5 * scale,
+            y: parentHeight * 0.5 - contentHeight * 0.5 * scale,
+            scale: scale,
+        }
     }
 
     resetView() {
-        const { parentWidth, parentHeight, contentWidth, contentHeight } = this
-
-        const scale = Math.min(parentWidth / contentWidth, parentHeight / contentHeight)
-        this.viewport.x = parentWidth * 0.5 - contentWidth * 0.5 * scale
-        this.viewport.y = parentHeight * 0.5 - contentHeight * 0.5 * scale
-        this.viewport.scale = scale
+        const target = this.getResetViewport()
+        this.viewport.x = target.x
+        this.viewport.y = target.y
+        this.viewport.scale = target.scale
         this.clampViewport()
+    }
+
+    doubleTapView(x: number, y: number) {
+        const interpolateDuration = 0.2
+        const resetViewport = this.getResetViewport()
+
+        const time = getTime()
+        const src = { ...this.viewport }
+        const delta = 
+            Math.abs(src.x - resetViewport.x) / this.parentWidth +
+            Math.abs(src.y - resetViewport.y) / this.parentHeight +
+            Math.abs(src.scale - resetViewport.scale) * 10.0
+        if (delta > 0.001) {
+            this.action = {
+                action: "interpolate",
+                src,
+                dst: resetViewport,
+                startTime: time,
+                duration: interpolateDuration,
+            }
+        } else {
+            const { parentWidth, parentHeight, contentWidth, contentHeight } = this
+            const scale = parentWidth / contentWidth
+            const localHeight = parentHeight / (contentHeight * scale)
+            let localY = 0.5
+            if (localHeight < 1.0) {
+                localY = clamp(y / parentHeight, 0.5*localHeight, 1.0 - 0.5*localHeight)
+            }
+            const dst = {
+                x: parentWidth * 0.5 - contentWidth * 0.5 * scale,
+                y: parentHeight * 0.5 - contentHeight * localY * scale,
+                scale,
+            }
+            this.action = {
+                action: "interpolate",
+                src,
+                dst,
+                startTime: time,
+                duration: interpolateDuration,
+            }
+        }
     }
 
     requestAnimationFrame() {
@@ -632,7 +760,6 @@ class PanZoomDebugImp {
 
             const decay = clamp(-release.velDelta / 100.0, 2.0, 4.0)
             const factor = (1.0 - Math.exp(dt * -decay)) / decay
-            console.log(factor)
 
             ctx.fillStyle = "#888"
             ctx.beginPath()
