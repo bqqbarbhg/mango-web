@@ -761,8 +761,9 @@ export class PanZoom {
                 yClampStrength = Infinity
             }
 
+            clampedViewport.x = viewport.x
             if (noClampDirection >= 0) {
-                clampedViewport.x = viewBounds.minX - this.clampEdge(viewBounds.minX - viewport.x, 1)
+                clampedViewport.x = viewBounds.minX - this.clampEdge(viewBounds.minX - clampedViewport.x, 1)
             }
             if (noClampDirection <= 0) {
                 clampedViewport.x = this.clampEdge(clampedViewport.x - viewBounds.maxX, 1) + viewBounds.maxX

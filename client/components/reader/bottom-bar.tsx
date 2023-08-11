@@ -27,7 +27,7 @@ function BottomBarContent() {
         <Link href="/">Home</Link>
         <ChapterListButton />
         <div>
-            {currentVolume.currentPage + 1}/{currentVolume.content.numPages}
+            {currentVolume.currentPage + 1}/{currentVolume.content.pages.length}
         </div>
     </div>
 }

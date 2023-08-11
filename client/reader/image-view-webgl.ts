@@ -12,6 +12,7 @@ type PageTexture = {
     mipMax: number
     uvScale: { x: number, y: number }
     texture: WebGLTexture
+    lruSerial: number
 }
 
 export default class ImageViewWebGL extends ImageView {
@@ -40,6 +41,8 @@ export default class ImageViewWebGL extends ImageView {
         rgtc: EXT_texture_compression_rgtc | null
         etc: WEBGL_compressed_texture_etc | null
     }
+
+    lruSerial: number = 0
 
     constructor(parent: HTMLElement) {
         super()
@@ -254,6 +257,7 @@ export default class ImageViewWebGL extends ImageView {
         let needUpdate = false
         let prevTexture = this.textureCache.get(index)
         if (prevTexture) {
+            prevTexture.lruSerial = ++this.lruSerial
             if (prevTexture.mipMin !== mipMin || prevTexture.mipMax !== mipMax) {
                 needUpdate = true
             }
@@ -267,6 +271,7 @@ export default class ImageViewWebGL extends ImageView {
             gl.deleteTexture(prevTexture.texture)
         }
 
+        const lruSerial = ++this.lruSerial
         if (mipMin >= 0) {
             const topMip = mipData[mipMin]!
             let extent = 1
@@ -307,15 +312,32 @@ export default class ImageViewWebGL extends ImageView {
                 y: image.imageHeight / topExtent,
             }
 
-            this.textureCache.set(index, { mipMin, mipMax, texture, uvScale })
+            this.textureCache.set(index, { mipMin, mipMax, texture, uvScale, lruSerial })
         } else {
             this.textureCache.set(index, {
-                mipMin, mipMax,
+                mipMin, mipMax, lruSerial,
                 uvScale: { x: 1, y: 1 },
                 texture: this.whiteTexture
             })
         }
 
+        const maxTextures = 32
+        if (this.textureCache.size > maxTextures) {
+            let minSerial = this.lruSerial
+            let minKey = null
+            for (const [key, val] of this.textureCache.entries()) {
+                if (val.lruSerial < minSerial) {
+                    minSerial = val.lruSerial
+                    minKey = key
+                }
+            }
+            if (minKey !== null) {
+                const entry = this.textureCache.get(minKey)!
+                gl.deleteTexture(entry.texture)
+                console.log(`DEL ${entry.texture}`)
+                this.textureCache.delete(minKey)
+            }
+        }
     }
 
     render() {
