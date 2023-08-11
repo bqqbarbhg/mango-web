@@ -14,6 +14,9 @@ export type UniformBind = {
 export type UniformBinds = UniformBind[]
 
 export const UniformBind = {
+    float: (gl: WebGL2RenderingContext, ctx: UniformBindContext, bind: UniformBind, value: any) => {
+        gl.uniform1f(bind.location, value)
+    },
     vec2: (gl: WebGL2RenderingContext, ctx: UniformBindContext, bind: UniformBind, value: any) => {
         gl.uniform2f(bind.location, value.x, value.y)
     },

@@ -2,6 +2,7 @@
 
 uniform vec2 basePosition;
 uniform vec2 quadScale;
+uniform vec2 uvScale;
 
 out vec2 v_uv;
 
@@ -20,5 +21,5 @@ void main()
     vec2 pos = basePosition + uv * quadScale;
     pos.y = 1.0 - pos.y;
     gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
-    v_uv = uv;
+    v_uv = uv * uvScale;
 }

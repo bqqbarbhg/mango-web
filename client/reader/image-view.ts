@@ -1,8 +1,27 @@
 import { Viewport } from "./common";
+import { MipCache } from "./mip-cache";
+
+export type ImageViewImage = {
+    x: number
+    y: number
+    scale: number
+    imageWidth: number
+    imageHeight: number
+    pageIndex: number
+    alpha: number
+}
+
+export type ImageViewScene = {
+    images: ImageViewImage[]
+}
 
 export default class ImageView {
-    viewport: Viewport = { x: 0, y: 0, scale: 1 }
+    //viewport: Viewport = { x: 0, y: 0, scale: 1 }
+    //fadeAlpha: number = 0.0
+    scene: ImageViewScene = { images: [] }
+    mipCache: MipCache | null
 
+    /*
     setViewport(viewport: Viewport): boolean {
         const dx = this.viewport.x - viewport.x
         const dy = this.viewport.y - viewport.y
@@ -18,8 +37,21 @@ export default class ImageView {
         }
     }
 
+    setFade(fade: number): boolean {
+        if (this.fadeAlpha !== fade) {
+            this.fadeAlpha = fade
+            return true
+        } else {
+            return false
+        }
+    }
+*/
+
+    setMipCache(cache: MipCache) { this.mipCache = cache }
+    setScene(scene: ImageViewScene) { this.scene = scene }
+    getImageFormat(): string | null { return null }
     parentResized() { }
-    setImage(image: HTMLImageElement) { }
+    // setImage(format: string, image: any) { }
     render() { }
     dispose() { }
 }

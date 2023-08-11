@@ -24,6 +24,7 @@ function LoginForm() {
                 token: user.token,
                 sources: [],
                 volumes: [],
+                currentVolume: null,
             }
 
             localStorage.setItem("user", JSON.stringify({

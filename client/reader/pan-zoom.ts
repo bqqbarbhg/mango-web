@@ -68,8 +68,15 @@ function clamp(x: number, minX: number, maxX: number) {
     return Math.min(Math.max(x, minX), maxX)
 }
 
+function smoothStep(t: number) {
+    if (t <= 0.0) return 0.0
+    if (t >= 1.0) return 1.0
+    return t * t * (3.0 - 2.0 * t)
+}
+
 type ActionHold = {
     action: "hold"
+    noClampDirection: number
 }
 
 type ActionPan = {
@@ -77,6 +84,8 @@ type ActionPan = {
     localX: number
     localY: number
     scale: number
+    noClampDirection: number
+    fromZoom: boolean
 }
 
 type ActionZoom = {
@@ -104,6 +113,17 @@ type ActionInterpolate = {
     duration: number
 }
 
+type ActionFade = {
+    action: "fade"
+    direction: "in" | "out"
+    src: Viewport
+    dst: Viewport
+    startTime: number
+    duration: number
+    horizontalDirection: number
+    srcAlpha: number
+}
+
 type ViewBounds = {
     minX: number
     minY: number
@@ -117,7 +137,17 @@ export type ClickInfo = {
     doubleClick: boolean
 }
 
-type Action = ActionHold | ActionPan | ActionZoom | ActionSingleZoom | ActionInterpolate
+export type ReleaseInfo = {
+    fromZoom: boolean
+}
+
+type Action =
+    | ActionHold
+    | ActionPan
+    | ActionZoom
+    | ActionSingleZoom
+    | ActionInterpolate
+    | ActionFade
 
 const sampleTargetDt = 1.0 / 45.0
 const releaseFixedDt = 1.0 / 30.0
@@ -142,10 +172,17 @@ export class PanZoom {
     minScale: number = 1
     maxScale: number = 1
     clickTimeout: number | null = null
+    fadeEndCallbacks: (() => void)[] = []
+    fadeAlpha: number = 0
+    pageChangeForce: number = 0
+    pageChangeVisualForce: number = 0
+    pageChangeReleaseForce: number = 0
+    pageChangeHideVisual: boolean = false
 
     // Callbacks
-    viewportCallback: (viewport: Viewport) => void = () => {}
+    viewportCallback: (viewport: Viewport, fade: number) => void = () => {}
     clickCallback: (click: ClickInfo) => boolean = () => false
+    releaseCallback: (release: ReleaseInfo) => boolean = () => false
     clickTimeoutCallback: () => boolean = () => false
 
     constructor(element: HTMLElement, debug?: IPanZoomDebug) {
@@ -164,7 +201,7 @@ export class PanZoom {
     }
 
     addTouch(id: TouchId, x: number, y: number) {
-        this.removeTouch(id)
+        this.removeTouch(id, false, -1, -1)
 
         if (this.touches.length >= 2) return
 
@@ -232,6 +269,7 @@ export class PanZoom {
     updateTouch(id: TouchId, x: number, y: number) {
         const touch = this.findTouch(id)
         if (!touch) return
+        this.pageChangeHideVisual = false
 
         const time = getTime()
         this.updateTouchPosition(touch, time)
@@ -247,7 +285,7 @@ export class PanZoom {
         this.requestAnimationFrame()
     }
 
-    removeTouch(id: TouchId) {
+    removeTouch(id: TouchId, up: boolean, x: number, y: number) {
         let index = 0
         const time = getTime()
         for (const touch of this.touches) {
@@ -261,6 +299,17 @@ export class PanZoom {
                     && time - this.lastReleaseTime >= releaseDebounce
                     && this.action?.action !== "single-zoom"
 
+                const deltaX = x - touch.startX
+                const deltaY = y - touch.startY
+                const deltaTime = Math.max(time - touch.startTime, 0.01)
+                const velX = deltaX / deltaTime
+                const velY = deltaY / deltaTime
+
+                const avgVelLerp = clamp(1.5 - deltaTime / 0.2, 0, 1)
+
+                const velocityX = lerp(lerp(touch.prevVelocityX, touch.velocityX, sampleAlpha), velX, avgVelLerp)
+                const velocityY = lerp(lerp(touch.prevVelocityY, touch.velocityY, sampleAlpha), velY, avgVelLerp)
+
                 this.release = {
                     id: touch.id,
                     prevX: this.viewport.x,
@@ -269,16 +318,18 @@ export class PanZoom {
                     nextY: this.viewport.y,
                     positionX: touch.positionX,
                     positionY: touch.positionY,
-                    velocityX: hasRelease ? lerp(touch.prevVelocityX, touch.velocityX, sampleAlpha) : 0.0,
-                    velocityY: hasRelease ? lerp(touch.prevVelocityY, touch.velocityY, sampleAlpha) : 0.0,
+                    velocityX: hasRelease ? velocityX : 0.0,
+                    velocityY: hasRelease ? velocityY : 0.0,
                     velDelta: hasRelease ? lerp(touch.prevVelDelta, touch.velDelta, sampleAlpha) : 0.0,
                     updateTime: time,
                     time,
                 }
 
+                const releaseVelocity = Math.sqrt(velocityX*velocityX + velocityY*velocityY)
+
                 this.touches.splice(index, 1)
 
-                const isClick = time - touch.startTime <= clickTime
+                const isClick = up && time - touch.startTime <= clickTime && releaseVelocity <= 750
                 if (isClick && this.touches.length === 0 && this.action?.action === "hold") {
                     const doubleClick = touch.doubleTap
                     const consumed = this.clickCallback({
@@ -287,13 +338,27 @@ export class PanZoom {
                         doubleClick,
                     })
 
+                    this.cancelClickTimeout()
+
                     if (!consumed) {
-                        this.cancelClickTimeout()
                         if (touch.doubleTap) {
                             this.doubleTapView(touch.eventPositionX, touch.eventPositionY)
                         } else {
                             this.clickTimeout = window.setTimeout(this.onClickTimeout, doubleTapThreshold * 1000)
                         }
+                    }
+                } else {
+                    this.pageChangeReleaseForce = velocityX
+                    const releaseInfo = {
+                        fromZoom: this.action?.action === "zoom"
+                            || this.action?.action === "single-zoom"
+                            || (this.action?.action === "pan" && this.action.fromZoom),
+                    }
+                    if (releaseInfo.fromZoom) {
+                        this.pageChangeHideVisual = true
+                    }
+                    if (this.releaseCallback(releaseInfo)) {
+                        this.release = null
                     }
                 }
 
@@ -318,12 +383,13 @@ export class PanZoom {
         if (this.clickTimeout === null) return
         this.clickTimeout = null
 
-        console.log("CLICK MISSED")
+        this.clickTimeoutCallback()
     }
 
     onMouseDown = (e: MouseEvent) => {
+        if (e.button > 2) return
         e.preventDefault()
-        if (e.button === 0) {
+        if (e.button === 0 || e.button === 1) {
             this.addTouch("mouse", e.pageX, e.pageY)
         }
     }
@@ -334,15 +400,16 @@ export class PanZoom {
     }
 
     onMouseUp = (e: MouseEvent) => {
+        if (e.button > 2) return
         e.preventDefault()
-        if (e.button === 0) {
-            this.removeTouch("mouse")
+        if (e.button === 0 || e.button === 1) {
+            this.removeTouch("mouse", true, e.pageX, e.pageY)
         }
     }
 
     onMouseLeave = (e: MouseEvent) => {
         e.preventDefault()
-        this.removeTouch("mouse")
+        this.removeTouch("mouse", false, -1, -1)
     }
 
     onTouchStart = (e: TouchEvent) => {
@@ -365,7 +432,7 @@ export class PanZoom {
         e.preventDefault()
         for (let i = 0; i < e.changedTouches.length; i++) {
             const touch = e.changedTouches[i]!
-            this.removeTouch(touch.identifier)
+            this.removeTouch(touch.identifier, true, touch.pageX, touch.pageY)
         }
     }
 
@@ -373,7 +440,7 @@ export class PanZoom {
         e.preventDefault()
         for (let i = 0; i < e.changedTouches.length; i++) {
             const touch = e.changedTouches[i]!
-            this.removeTouch(touch.identifier)
+            this.removeTouch(touch.identifier, false, -1, -1)
         }
     }
 
@@ -453,22 +520,23 @@ export class PanZoom {
         release.velocityY -= clamp(release.velocityY, -decay*dt, decay*dt)
 
         let inBounds = true
-        const boundAlpha = 0.35
+        const boundAlphaX = 0.35
+        const boundAlphaY = 0.6
         const boundAbs = 200 * releaseFixedDt
         if (release.nextX < viewBounds.minX) {
-            release.nextX = absLerp(release.nextX, viewBounds.minX, boundAlpha, boundAbs)
+            release.nextX = absLerp(release.nextX, viewBounds.minX, boundAlphaX, boundAbs)
             inBounds = false
         }
         if (release.nextX > viewBounds.maxX) {
-            release.nextX = absLerp(release.nextX, viewBounds.maxX, boundAlpha, boundAbs)
+            release.nextX = absLerp(release.nextX, viewBounds.maxX, boundAlphaX, boundAbs)
             inBounds = false
         }
         if (release.nextY < viewBounds.minY) {
-            release.nextY = absLerp(release.nextY, viewBounds.minY, boundAlpha, boundAbs)
+            release.nextY = absLerp(release.nextY, viewBounds.minY, boundAlphaY, boundAbs)
             inBounds = false
         }
         if (release.nextY > viewBounds.maxY) {
-            release.nextY = absLerp(release.nextY, viewBounds.maxY, boundAlpha, boundAbs)
+            release.nextY = absLerp(release.nextY, viewBounds.maxY, boundAlphaY, boundAbs)
             inBounds = false
         }
 
@@ -479,8 +547,15 @@ export class PanZoom {
     }
 
     updateAction() {
-        const { touches } = this
         const time = getTime()
+
+        /*
+        if (this.action?.action === "fade") {
+            this.touches = []
+        }
+        */
+
+        const { touches } = this
         for (const touch of touches) {
             this.updateTouchPosition(touch, time)
         }
@@ -492,8 +567,17 @@ export class PanZoom {
                 const dy = a.positionY - a.startY
                 const dist = Math.sqrt(dx*dx + dy*dy)
 
+                let noClampDirection = 0
+                if (this.action?.action === "fade") {
+                    noClampDirection = this.action.horizontalDirection
+                } else if (this.action?.action === "hold") {
+                    noClampDirection = this.action.noClampDirection
+                }
+
+                const fromZoom = this.action?.action === "zoom"
+
                 const threshold = 6
-                if (dist > threshold) {
+                if (dist > threshold || fromZoom) {
                     if (a.doubleTap && (!this.action || this.action.action === "hold")) {
                         this.action = {
                             action: "single-zoom",
@@ -509,11 +593,14 @@ export class PanZoom {
                             scale: this.viewport.scale,
                             localX: (a.positionX - this.viewport.x) / this.viewport.scale,
                             localY: (a.positionY - this.viewport.y) / this.viewport.scale,
+                            noClampDirection,
+                            fromZoom,
                         }
                     }
                 } else {
                     this.action = {
                         action: "hold",
+                        noClampDirection,
                     }
                 }
             }
@@ -557,9 +644,34 @@ export class PanZoom {
             this.viewport.y = midY - action.localY * this.viewport.scale
         } else {
             const { action } = this
-            if (action?.action === "interpolate") {
+            if (action?.action === "fade") {
                 const t = clamp((time - action.startTime) / action.duration, 0.0, 1.0)
-                const u = t * t * (3.0 - 2.0 * t)
+                const u = 
+                    action.direction === "out"
+                        ? smoothStep(t * 0.5) * 2.0
+                        // : smoothStep(t)
+                        : smoothStep(0.5 + t * 0.5) * 2.0 - 1.0
+
+                const { src, dst } = action
+                this.viewport.x = lerp(src.x, dst.x, u)
+                this.viewport.y = lerp(src.y, dst.y, u)
+                this.viewport.scale = lerp(src.scale, dst.scale, u)
+
+                this.fadeAlpha = action.direction === "out" ? u : 1.0 - u
+
+                this.release = null
+                if (t === 1) {
+                    this.action = null
+                    if (this.fadeEndCallbacks.length > 0) {
+                        for (const cb of this.fadeEndCallbacks) {
+                            cb()
+                        }
+                        this.fadeEndCallbacks = []
+                    }
+                }
+            } else if (action?.action === "interpolate") {
+                const t = clamp((time - action.startTime) / action.duration, 0.0, 1.0)
+                const u = smoothStep(t)
 
                 const { src, dst } = action
                 this.viewport.x = lerp(src.x, dst.x, u)
@@ -596,10 +708,11 @@ export class PanZoom {
         }
     }
 
-    clampEdge(amount: number): number {
+    clampEdge(amount: number, force: number): number {
         if (amount <= 0) return amount
-        const weight = 0.001
-        const ratio = 1.5
+        if (!isFinite(force)) return 0
+        const weight = 0.001 * force
+        const ratio = 1.5 * force
         return (1.0 - Math.exp(weight * -amount)) / (weight * ratio)
     }
 
@@ -609,23 +722,27 @@ export class PanZoom {
         const scale = this.viewport.scale
         const childWidth = this.contentWidth * scale
         const childHeight = this.contentHeight * scale
-        const paddingWidth = childWidth * 0.5
-        const paddingHeight = childHeight * 0.5
+        const paddingWidth = childWidth * 0.0
+        const paddingHeight = 0.0
 
         if (parentWidth < childWidth) {
             viewBounds.minX = parentWidth - childWidth - paddingWidth
             viewBounds.maxX = 0 + paddingWidth
         } else {
-            viewBounds.minX = 0 - paddingWidth
-            viewBounds.maxX = parentWidth - childWidth + paddingWidth
+            // viewBounds.minX = 0 - paddingWidth
+            // viewBounds.maxX = parentWidth - childWidth + paddingWidth
+            viewBounds.minX = parentWidth * 0.5 - childWidth * 0.5
+            viewBounds.maxX = viewBounds.minX
         }
 
         if (parentHeight < childHeight) {
             viewBounds.minY = parentHeight - childHeight - paddingHeight
             viewBounds.maxY = 0 + paddingHeight
         } else {
-            viewBounds.minY = 0 - paddingHeight
-            viewBounds.maxY = parentHeight - childHeight + paddingHeight
+            // viewBounds.minY = 0 - paddingHeight
+            // viewBounds.maxY = parentHeight - childHeight + paddingHeight
+            viewBounds.minY = parentHeight * 0.5 - childHeight * 0.5
+            viewBounds.maxY = viewBounds.minY
         }
     }
 
@@ -633,12 +750,42 @@ export class PanZoom {
         const { viewBounds, clampedViewport, viewport } = this
         this.updateViewBounds()
 
-        clampedViewport.x = viewBounds.minX - this.clampEdge(viewBounds.minX - viewport.x)
-        clampedViewport.x = this.clampEdge(clampedViewport.x - viewBounds.maxX) + viewBounds.maxX
-        clampedViewport.y = viewBounds.minY - this.clampEdge(viewBounds.minY - viewport.y)
-        clampedViewport.y = this.clampEdge(clampedViewport.y - viewBounds.maxY) + viewBounds.maxY
+        if (this.action?.action !== "fade") {
+            let noClampDirection = 0
+            if (this.action?.action === "hold" || this.action?.action === "pan") {
+                noClampDirection = this.action.noClampDirection
+            }
+
+            let yClampStrength = 1
+            if (this.viewport.scale <= this.minScale * 1.05) {
+                yClampStrength = Infinity
+            }
+
+            if (noClampDirection >= 0) {
+                clampedViewport.x = viewBounds.minX - this.clampEdge(viewBounds.minX - viewport.x, 1)
+            }
+            if (noClampDirection <= 0) {
+                clampedViewport.x = this.clampEdge(clampedViewport.x - viewBounds.maxX, 1) + viewBounds.maxX
+            }
+            clampedViewport.y = viewBounds.minY - this.clampEdge(viewBounds.minY - viewport.y, yClampStrength)
+            clampedViewport.y = this.clampEdge(clampedViewport.y - viewBounds.maxY, yClampStrength) + viewBounds.maxY
+        } else {
+            clampedViewport.x = viewport.x
+            clampedViewport.y = viewport.y
+        }
 
         clampedViewport.scale = viewport.scale
+
+        if (this.action?.action === "pan") {
+            this.pageChangeForce = clampedViewport.x - viewport.x
+        } else {
+            this.pageChangeForce = 0.0
+        }
+        if (this.action?.action !== "zoom" && this.action?.action !== "single-zoom" && !(this.action?.action === "pan" && this.action.fromZoom)) {
+            this.pageChangeVisualForce = clamp(clampedViewport.x, viewBounds.minX, viewBounds.maxX) - clampedViewport.x
+        } else {
+            this.pageChangeVisualForce = 0.0
+        }
     }
 
     setBounds(parentWidth: number, parentHeight: number, contentWidth: number, contentHeight: number) {
@@ -649,29 +796,89 @@ export class PanZoom {
 
         const minScale = Math.min(this.parentWidth / this.contentWidth, this.parentHeight / this.contentHeight)
         const maxScale = Math.max(this.parentWidth / this.contentWidth, this.parentHeight / this.contentHeight)
-        this.minScale = minScale * 0.1
+        this.minScale = minScale
         this.maxScale = maxScale * 10.0
     }
 
-    getResetViewport() {
-        const { parentWidth, parentHeight, contentWidth, contentHeight } = this
-        const scale = Math.min(parentWidth / contentWidth, parentHeight / contentHeight)
+    getResetViewportFor(width: number, height: number) {
+        const { parentWidth, parentHeight } = this
+        const scale = Math.min(parentWidth / width, parentHeight / height)
         return {
-            x: parentWidth * 0.5 - contentWidth * 0.5 * scale,
-            y: parentHeight * 0.5 - contentHeight * 0.5 * scale,
+            x: parentWidth * 0.5 - width * 0.5 * scale,
+            y: parentHeight * 0.5 - height * 0.5 * scale,
             scale: scale,
         }
     }
 
+    getResetViewport() {
+        const { contentWidth, contentHeight } = this
+        return this.getResetViewportFor(contentWidth, contentHeight)
+    }
+
     resetView() {
         const target = this.getResetViewport()
+        this.action = null
+        this.touches = []
+        this.release = null
         this.viewport.x = target.x
         this.viewport.y = target.y
         this.viewport.scale = target.scale
         this.clampViewport()
+        this.lastClickTime = -1
+    }
+
+    fadeInFrom(viewport: Viewport, direction: number, alpha: number) {
+        const dst = { ...this.viewport }
+        const src = { ...viewport }
+        const duration = 0.2
+        const time = getTime()
+
+        this.action = {
+            action: "fade",
+            direction: "in",
+            src, dst, duration,
+            startTime: time,
+            horizontalDirection: direction,
+            srcAlpha: alpha,
+        }
+
+        this.requestAnimationFrame()
+    }
+
+    fadeIn(direction: number) {
+        const src = {
+            x: this.viewport.x - direction * 100,
+            y: this.viewport.y,
+            scale: this.viewport.scale,
+        }
+        this.fadeInFrom(src, direction, 0.0)
+    }
+
+    fadeOut(direction: number) {
+        const src = { ...this.viewport }
+        const dst = {
+            x: src.x + direction * 100,
+            y: src.y,
+            scale: src.scale,
+        }
+        const duration = 0.15
+        const time = getTime()
+
+        this.action = {
+            action: "fade",
+            direction: "out",
+            src, dst, duration,
+            startTime: time,
+            horizontalDirection: direction,
+            srcAlpha: 1.0,
+        }
+
+        this.requestAnimationFrame()
     }
 
     doubleTapView(x: number, y: number) {
+        if (this.action?.action === "fade") return
+
         const interpolateDuration = 0.2
         const resetViewport = this.getResetViewport()
 
@@ -718,18 +925,41 @@ export class PanZoom {
         }
     }
 
+    onFadeEnd(fn: () => void) {
+        if (this.action?.action !== "fade") {
+            fn()
+        } else {
+            this.fadeEndCallbacks.push(fn)
+        }
+    }
+
     onAnimationFrame = () => {
         this.animationFrameToken = null
 
         this.updateAction()
         this.clampViewport()
-        this.viewportCallback(this.clampedViewport)
+        this.viewportCallback(this.clampedViewport, this.fadeAlpha)
 
         if (this.action !== null || this.release !== null) {
             this.requestAnimationFrame()
         }
         if (process.env.NODE_ENV !== "production" && this.debug) {
             this.debug.render(this)
+        }
+    }
+
+    getFadeAmount(): number {
+        const action = this.action
+        if (action?.action === "fade") {
+            const time = getTime()
+            const t = clamp((time - action.startTime) / action.duration, 0.0, 1.0)
+            const u = 
+                action.direction === "out"
+                    ? smoothStep(t * 0.5) * 2.0
+                    : smoothStep(0.5 + t * 0.5) * 2.0 - 1.0
+            return 1.0 - u
+        } else {
+            return 0.0
         }
     }
 }

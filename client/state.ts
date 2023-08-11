@@ -1,4 +1,4 @@
-import { createState } from "kaiku"
+import { createState, useEffect } from "kaiku"
 import * as V from "./utils/validation"
 import { setApiToken } from "./utils/api"
 
@@ -7,22 +7,64 @@ export type Source = {
     uuid: string
 }
 
+export const LangString = V.type("LangString", V.openObject({
+    en: V.string,
+}, V.string))
+
 export const VolumeInfo = V.type("VolumeInfo", V.object({
     path: V.string,
     info: V.object({
-        title: V.openObject({
-            en: V.string,
-        }, V.string),
+        title: LangString,
         volume: V.union([V.integer, V.toNull]),
         numPages: V.integer,
     }),
 }))
-declare type VolumeInfo = V.ValidatorResult<typeof VolumeInfo>
+export type VolumeInfo = V.ValidatorResult<typeof VolumeInfo>
 
 export const SourceIndex = V.type("SourceIndex", V.object({
     volumes: V.array(VolumeInfo)
 }))
 
+export const MangoChapter = V.type("MangoChapter", V.object({
+    title: LangString,
+    startPage: V.integer,
+    index: V.integer,
+}))
+export type MangoChapter = V.ValidatorResult<typeof MangoChapter>
+
+export const MangoInfo = V.type("MangoInfo", V.openObject({
+    title: LangString,
+    startPage: V.integer,
+    volume: V.integer,
+    chapters: V.array(MangoChapter),
+}, V.any))
+export type MangoInfo = V.ValidatorResult<typeof MangoInfo>
+
+export const MangoContent = V.type("MangoContent", V.object({
+    files: V.array(V.union([
+        V.object({
+            mipLevel: V.integer,
+            format: V.string,
+            batch: V.literal(false),
+            pages: V.array(V.string),
+        }),
+        V.object({
+            mipLevel: V.integer,
+            format: V.string,
+            batch: V.literal(true),
+            pages: V.array(V.object({
+                base: V.integer,
+                count: V.integer,
+                name: V.string,
+            })),
+        }),
+    ])),
+    pages: V.array(V.object({
+        width: V.integer,
+        height: V.integer,
+    })),
+}))
+export type MangoContent = V.ValidatorResult<typeof MangoContent>
 
 export type Volume = {
     sourceUrl: string
@@ -30,11 +72,22 @@ export type Volume = {
     volume: VolumeInfo
 }
 
+export type SourceInfo = { url: string, uuid: string }
+
+export type CurrentVolume = {
+    path: string
+    info: MangoInfo
+    content: MangoContent
+    source: SourceInfo
+    currentPage: number
+}
+
 export type User = {
     name: string
     token: string
     sources: Source[]
     volumes: Volume[]
+    currentVolume: CurrentVolume | null
 }
 
 export type ErrorReport = {
@@ -82,7 +135,7 @@ export function parseRoute(location: Location): Route {
     return { path: "/" }
 }
 
-export type ErrorKind = "error" | "fetch" | "api" | "user"
+export type ErrorKind = "error" | "fetch" | "api" | "user" | "source"
 
 export class MangoError extends Error {
     kind: ErrorKind
@@ -139,7 +192,6 @@ export function closeError(id: string) {
 
 export function clearErrors() {
     globalState.errors = []
-    console.error("UH")
 }
 
 export function clearUser() {
@@ -168,6 +220,7 @@ function loadUser(): User | null {
             ...user,
             sources: [],
             volumes: [],
+            currentVolume: null,
         }
     } catch (err) {
         console.log(err)
@@ -187,6 +240,31 @@ export const globalState = createState<State>({
     user: loadUser(),
 })
 
+useEffect(() => {
+    const route = globalState.route
+    let title = ""
+    if (route.path === "/register") {
+        title = "Register"
+    } else if (route.path === "/") {
+        title = "Listing"
+    } else if (route.path === "/read/") {
+        const currentVolume = globalState.user?.currentVolume ?? null
+        if (currentVolume && currentVolume.path === route.id) {
+            const { info } = currentVolume
+            const volumeTitle = info.title.jp ?? info.title.en
+            title = info.volume ? `${volumeTitle}${info.volume}` : volumeTitle
+        } else {
+            title = "Loading..."
+        }
+    } else if (route.path === "/settings/") {
+        title = "Settings"
+    }
+    document.title = `${title} | Mango`
+})
+
 if (process.env.NODE_ENV !== "production") {
-    (window as any).globalState = globalState
+    (window as any).globalState = globalState;
+    (window as any).ds = (obj: any) => {
+        console.log(JSON.stringify(obj, null, 2))
+    }
 }

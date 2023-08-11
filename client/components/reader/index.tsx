@@ -1,56 +1,12 @@
 import { immutable, useState, unwrap, useEffect } from "kaiku";
-import { RouteRead, globalState, navigateTo, pushError } from "../../state";
+import { MangoContent, MangoInfo, RouteRead, globalState, navigateTo, pushError } from "../../state";
 import ImageView from "../../reader/image-view-webgl";
 import { apiCall } from "../../utils/api";
 import { fetchSources, refreshVolumes } from "../../utils/fetching";
 import { Reader } from "./reader";
+import { sourceGetJson } from "../../utils/source";
+import { validate } from "../../utils/validation";
 
-function Viewer() {
-    type State = {
-        parentRef: { current?: HTMLElement }
-        canvasRef: { current?: HTMLCanvasElement }
-        imageView: ImageView | null
-    }
-
-    const state = useState<State>({
-        parentRef: { },
-        canvasRef: { },
-        imageView: null,
-    })
-
-    if (state.canvasRef.current && state.parentRef.current && !state.imageView) {
-        const imageView = new ImageView(
-            unwrap(state.parentRef.current as any),
-            unwrap(state.canvasRef.current as any))
-        state.imageView = immutable(imageView)
-
-        const image = new Image()
-        image.src = "/test-image.png"
-        image.addEventListener("load", () => {
-            console.log("LOAD")
-            imageView.setImage(image)
-        })
-
-        function render() {
-            imageView.render()
-            window.requestAnimationFrame(render)
-        }
-        render()
-    }
-
-    console.log("RENDER")
-
-    const imageView = state.imageView ? unwrap(state.imageView as any) : null
-
-    if (imageView) {
-    }
-
-    return <div>
-        <div ref={state.parentRef} className="viewer-parent">
-            <canvas ref={state.canvasRef} />
-        </div>
-    </div>
-}
 
 function Loader() {
     return <h1>...</h1>
@@ -117,6 +73,30 @@ export function Index() {
         } catch (err) {
             pushError("Failed to update status", err, { deduplicate: true })
         }
+
+        const source = { url: sourceUrl, uuid: sourceUrl }
+
+        try {
+            const pMangoContent = sourceGetJson(source, `${path}/mango-content.json`)
+            const pMangoInfo = sourceGetJson(source, `${path}/mango-info.json`)
+            const [mangoContent, mangoInfo] = await Promise.all([pMangoContent, pMangoInfo])
+
+            const currentVolume = {
+                path, source,
+                info: immutable(validate(MangoInfo, mangoInfo)),
+                content: immutable(validate(MangoContent, mangoContent)),
+                currentPage: 0,
+            }
+
+            user.currentVolume = currentVolume
+        } catch (err) {
+            navigateTo("/")
+            pushError(`Failed to load ${path}`, err)
+        }
+
+        if (sourceUuid !== null) {
+            window.history.replaceState(null, "", window.location.pathname)
+        }
     }
 
     useEffect(() => {
@@ -124,5 +104,6 @@ export function Index() {
         state.pending = false
     })
 
+    // @ts-ignore
     return state.pending ? <Loader /> : <Reader />
 }
