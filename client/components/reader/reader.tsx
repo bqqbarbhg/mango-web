@@ -140,7 +140,8 @@ export class Reader extends Component<Props, State> {
 
         if (this.interpolateFromViewport) {
             this.panZoom!.resetView()
-            this.panZoom?.fadeInFrom(this.interpolateFromViewport, this.fadeDirection, 0.0)
+            this.panZoom!.fadeInFrom(this.interpolateFromViewport, this.fadeDirection, 0.0)
+            this.interpolateFromViewport = null
         } else {
             this.panZoom!.resetView()
         }
