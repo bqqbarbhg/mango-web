@@ -33,6 +33,8 @@ export class Reader extends Component<Props, State> {
     interpolateFromViewport: Viewport | null = null
     leftViewport: Viewport = { x: 0, y: 0, scale: 1 }
     rightViewport: Viewport = { x: 0, y: 0, scale: 1 }
+    leftViewportFade: Viewport = { x: 0, y: 0, scale: 1 }
+    rightViewportFade: Viewport = { x: 0, y: 0, scale: 1 }
 
     constructor(props: Props) {
         super(props)
@@ -200,12 +202,16 @@ export class Reader extends Component<Props, State> {
 
     moveToPreviousPage(): boolean {
         const currentVolume = globalState.user?.currentVolume
-        if (!currentVolume) return false
+        const { panZoom } = this
+        if (!currentVolume || !panZoom) return false
 
         if (currentVolume.currentPage > 0) {
             currentVolume.currentPage -= 1
             this.interpolateFromViewport = this.leftViewport
             this.fadeDirection = -1
+            this.rightViewportFade.x = panZoom.clampedViewport.x
+            this.rightViewportFade.y = panZoom.clampedViewport.y
+            this.rightViewportFade.scale = panZoom.clampedViewport.scale
             return true
         } else {
             return false
@@ -214,12 +220,16 @@ export class Reader extends Component<Props, State> {
 
     moveToNextPage(): boolean {
         const currentVolume = globalState.user?.currentVolume
-        if (!currentVolume) return false
+        const { panZoom } = this
+        if (!currentVolume || !panZoom) return false
 
         if (currentVolume.currentPage < currentVolume.content.pages.length - 1) {
             currentVolume.currentPage += 1
             this.interpolateFromViewport = this.rightViewport
             this.fadeDirection = +1
+            this.leftViewportFade.x = panZoom.clampedViewport.x
+            this.leftViewportFade.y = panZoom.clampedViewport.y
+            this.leftViewportFade.scale = panZoom.clampedViewport.scale
             return true
         } else {
             return false
@@ -293,7 +303,7 @@ export class Reader extends Component<Props, State> {
         }
     }
 
-    onViewport = (viewport: Viewport, fadeAmount: number) => {
+    onViewport = (viewport: Viewport, _: number) => {
         /*
         let invalidated = this.imageView.setViewport(viewport)
         invalidated = this.imageView.setFade(fadeAmount) ? true : invalidated
@@ -309,8 +319,12 @@ export class Reader extends Component<Props, State> {
         const nextPage = currentVolume.content.pages[this.prevPage + 1]
         const prevPage = currentVolume.content.pages[this.prevPage - 1]
 
-        const prevViewport = prevPage ? panZoom.getResetViewportFor(prevPage.width, prevPage.height) : null
-        const nextViewport = nextPage ? panZoom.getResetViewportFor(nextPage.width, nextPage.height) : null
+        const fadeAmount = panZoom.getFadeAmount()
+        const leftMinFade = this.fadeDirection > 0 ? fadeAmount : 0
+        const rightMinFade =  this.fadeDirection < 0 ? fadeAmount : 0
+
+        const prevViewport = leftMinFade > 0.0 ? this.leftViewportFade : (prevPage ? panZoom.getResetViewportFor(prevPage.width, prevPage.height) : null)
+        const nextViewport = rightMinFade > 0.0 ? this.rightViewportFade : (nextPage ? panZoom.getResetViewportFor(nextPage.width, nextPage.height) : null)
 
         const pageChangeForce = panZoom.pageChangeForce
         const pageChangeVisualForce = panZoom.pageChangeHideVisual ? 0.0 : panZoom.pageChangeVisualForce
@@ -326,9 +340,6 @@ export class Reader extends Component<Props, State> {
             this.rightViewport.y = nextViewport!.y
             this.rightViewport.scale = nextViewport!.scale
         }
-
-        const leftMinFade = this.fadeDirection > 0 ? panZoom.getFadeAmount() : 0
-        const rightMinFade =  this.fadeDirection < 0 ? panZoom.getFadeAmount() : 0
 
         const scene: ImageViewScene = {
             images: [
