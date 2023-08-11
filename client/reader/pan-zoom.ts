@@ -899,14 +899,22 @@ export class PanZoom {
             }
         } else {
             const { parentWidth, parentHeight, contentWidth, contentHeight } = this
-            const scale = parentWidth / contentWidth
+            const scale = Math.max(parentWidth / contentWidth, this.minScale * 2.0)
+            const localWidth = parentWidth / (contentWidth * scale)
             const localHeight = parentHeight / (contentHeight * scale)
+            let localX = 0.5
             let localY = 0.5
+            if (localWidth < 1.0) {
+                console.log(this.viewport.x)
+                console.log(x)
+                localX = clamp((x - this.viewport.x) / (contentWidth * this.viewport.scale), 0.5*localWidth, 1.0 - 0.5*localWidth)
+                console.log(localX)
+            }
             if (localHeight < 1.0) {
-                localY = clamp(y / parentHeight, 0.5*localHeight, 1.0 - 0.5*localHeight)
+                localY = clamp((y - this.viewport.y) / (contentHeight * this.viewport.scale), 0.5*localHeight, 1.0 - 0.5*localHeight)
             }
             const dst = {
-                x: parentWidth * 0.5 - contentWidth * 0.5 * scale,
+                x: parentWidth * 0.5 - contentWidth * localX * scale,
                 y: parentHeight * 0.5 - contentHeight * localY * scale,
                 scale,
             }
