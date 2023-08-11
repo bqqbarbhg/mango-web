@@ -3,7 +3,7 @@ import { ClickInfo, PanZoom, ReleaseInfo } from "../../reader/pan-zoom"
 import { Viewport } from "../../reader/common";
 import ImageView, { ImageViewScene } from "../../reader/image-view";
 import ImageViewWebGL from "../../reader/image-view-webgl";
-import ImageViewCanvas from "../../reader/image-view-canvas";
+// import ImageViewCanvas from "../../reader/image-view-canvas";
 import { BottomBar } from "./bottom-bar";
 import { globalState, pushError } from "../../state";
 import { CancelError, CancelToken, fetchXHR } from "../../utils/fetch-xhr";

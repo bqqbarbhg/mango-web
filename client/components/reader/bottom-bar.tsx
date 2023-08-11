@@ -14,6 +14,7 @@ function ChapterListButton() {
     }
 
     return <div className="chapter-list-button">
+        {/* @ts-ignore */}
         <ChapterList visible={state.visible} />
         <button onClick={onClick}>Chapters</button>
     </div>

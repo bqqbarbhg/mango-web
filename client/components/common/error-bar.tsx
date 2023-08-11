@@ -31,6 +31,7 @@ function ErrorEntry({ report }: { report: ErrorReport }) {
 export function ErrorBar() {
     return <div className="error-parent">
         <ul className="error-list">
+            {/* @ts-ignore */}
             {globalState.errors.map(err => <ErrorEntry report={err} key={err.id} />)}
         </ul>
     </div>
