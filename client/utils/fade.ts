@@ -22,7 +22,7 @@ export function useFade(show: boolean, init?: { cullDelayMs?: number }): FadeSta
                 state.showTimeout = window.setTimeout(() => {
                     state.showTimeout = -1
                     state.hide = false
-                }, 0)
+                }, 1)
             }
             if (state.cullTimeout >= 0) {
                 window.clearTimeout(state.cullTimeout)

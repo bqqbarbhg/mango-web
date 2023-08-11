@@ -96,8 +96,8 @@ body {
     z-index: 1;
     opacity: 100%;
     transition:
-        opacity 0.08s ease-out,
-        transform 0.08s ease-out;
+        opacity 0.15s ease-out,
+        transform 0.15s ease-out;
 }
 
 .cull {
@@ -145,8 +145,8 @@ body {
     padding: 1rem;
     opacity: 100%;
     transition:
-        opacity 0.08s ease-out,
-        transform 0.08s ease-out;
+        opacity 0.15s ease-out,
+        transform 0.15s ease-out;
 }
 
 .chapter-list.hide {
