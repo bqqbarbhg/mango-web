@@ -18,6 +18,18 @@ button {
 
 body {
     font-family: sans-serif;
+    overflow: hidden;
+}
+
+.app-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.app-main {
+    flex-grow: 1;
+    overflow-y: scroll;
 }
 
 /* Errors */

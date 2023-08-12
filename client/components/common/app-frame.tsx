@@ -19,15 +19,15 @@ export function AppFrame(props: Props) {
         }
     }
 
-    return <>
+    return <div className="app-root">
         <nav>
             <Link href="/">List</Link>
             <Link href="/settings">Settings</Link>
             <span>{user.name}</span>
             <button onClick={logout}>Log out</button>
         </nav>
-        <main>
+        <main className="app-main">
             {props.children}
         </main>
-    </>
+    </div>
 }

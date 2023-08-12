@@ -138,6 +138,7 @@ export class OverlayManager {
     rootOnRight = false
     rootPos = { x: 0, y: 0 }
     rootSize = { x: 0, y: 0 }
+    rootVisible = false
     rootTarget = { x: 0, y: 0, width: 0, visible: false }
 
     highlightCallback: (aabbs: PJ.AABB[]) => void = () => {}
@@ -393,6 +394,13 @@ export class OverlayManager {
         const topState = globalState.user?.overlay?.rootRef.current
         if (!topState) return
 
+        if (this.rootVisible !== rootTarget.visible) {
+            topState.style.display = rootTarget.visible ? "block" : "none"
+            this.rootVisible = rootTarget.visible
+        }
+
+        if (!this.rootVisible) return
+
         const elemSize = {
             x: viewSize.x * 0.45,
             y: viewSize.y * 0.3,
@@ -419,8 +427,6 @@ export class OverlayManager {
         } else if (this.rootOnRight && target.x < minPos.x + viewSize.x * 0.48) {
             this.rootOnRight = false
         }
-
-        topState.style.display = target.visible ? "block" : "none"
 
         let targetPos
         if (this.rootOnRight) {

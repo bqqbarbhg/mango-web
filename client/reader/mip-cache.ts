@@ -76,6 +76,8 @@ export class MipCache {
     preloadInterval: number[] = [0, 1, 2, 8]
     preloadPriority: number[] = [10, 20, 40, 300]
     priorityQueueLength: number
+    filePriorityDirty: boolean
+    hasUnloadedFiles: boolean
 
     loadCallback: () => void = () => {}
 
@@ -207,14 +209,19 @@ export class MipCache {
     */
     loadPriorityFiles() {
         if (this.isLoading) return
+        if (!this.hasUnloadedFiles) return
+        console.log("loading")
+
         this.priorityFiles.sort((a, b) => b.priority - a.priority)
         for (const file of this.priorityFiles) {
             if (file.state === "unloaded") {
                 this.isLoading = true
                 this.loadFile(file)
-                break
+                return
             }
         }
+
+        this.hasUnloadedFiles = false
     }
 
     addFilePriority(file: MipFile, priority: number) {
@@ -222,9 +229,22 @@ export class MipCache {
             this.priorityFiles.push(file)
         }
         file.priority += priority
+        if (file.state === "unloaded") {
+            this.hasUnloadedFiles = true
+        }
+    }
+
+    setPreloadPage(page: number) {
+        if (page === this.preloadPage) return
+        this.preloadPage = page
+        this.filePriorityDirty = true
+        this.resetFilePriority()
+        this.loadPriorityFiles()
     }
 
     resetFilePriority() {
+        if (!this.filePriorityDirty) return
+
         let queueLength = 0
         for (const file of this.priorityFiles) {
             if (file.state === "unloaded") {
@@ -252,6 +272,8 @@ export class MipCache {
                 this.addFilePriority(file, priority - Math.abs(delta))
             }
         }
+
+        this.filePriorityDirty = false
     }
 
     getMipPage(index: number, maxMip: number): MipPage {
@@ -262,7 +284,10 @@ export class MipCache {
             const fileIndex = page.mipFiles[level]!
             const file = this.files[fileIndex]!
             file.lruSerial = ++this.lruSerial
-            this.addFilePriority(file, 100 + level)
+            if (file.state !== "loaded") {
+                this.addFilePriority(file, 100 + level)
+                this.filePriorityDirty = true
+            }
         }
 
         this.loadPriorityFiles()

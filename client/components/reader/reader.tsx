@@ -121,7 +121,7 @@ export class Reader extends Component<Props, State> {
                 this.mipCache.loadCallback = this.onMipLoad
             }
 
-            this.mipCache.preloadPage = currentVolume.currentPage
+            this.mipCache.setPreloadPage(currentVolume.currentPage)
             this.loadPage(currentVolume.currentPage)
         })
     }
