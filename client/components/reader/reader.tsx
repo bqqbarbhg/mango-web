@@ -1,7 +1,7 @@
 import { Component, useState, unwrap, useEffect, useRef, createState } from "kaiku";
 import { ClickInfo, PanZoom, ReleaseInfo } from "../../reader/pan-zoom"
 import { Viewport } from "../../reader/common";
-import ImageView, { ImageViewScene } from "../../reader/image-view";
+import ImageView, { ImageViewHighlight, ImageViewScene } from "../../reader/image-view";
 import ImageViewWebGL from "../../reader/image-view-webgl";
 // import ImageViewCanvas from "../../reader/image-view-canvas";
 import { BottomBar } from "./bottom-bar";
@@ -9,6 +9,12 @@ import { globalState, pushError } from "../../state";
 import { CancelError, CancelToken, fetchXHR } from "../../utils/fetch-xhr";
 import { parseKtx, ktxJson } from "../../utils/ktx";
 import { MipCache } from "../../reader/mip-cache";
+import { Overlay } from "../overlay/overlay";
+import { OverlayManager } from "../../reader/overlay-manager";
+import { sourceGetJson } from "../../utils/source";
+import * as V from "../../utils/validation"
+import * as PJ from "../../reader/page-json"
+import { immutable } from "kaiku"
 
 type Props = { }
 type State = {
@@ -35,6 +41,8 @@ export class Reader extends Component<Props, State> {
     rightViewport: Viewport = { x: 0, y: 0, scale: 1 }
     leftViewportFade: Viewport = { x: 0, y: 0, scale: 1 }
     rightViewportFade: Viewport = { x: 0, y: 0, scale: 1 }
+    overlayManager: OverlayManager
+    highlights: ImageViewHighlight[] = []
 
     constructor(props: Props) {
         super(props)
@@ -45,6 +53,9 @@ export class Reader extends Component<Props, State> {
 
         this.image = new Image()
         this.image.crossOrigin = "anonymous"
+
+        this.overlayManager = new OverlayManager(globalState.user!.overlay!)
+        this.overlayManager.highlightCallback = this.onHighlight
 
         useEffect(() => {
             if (this.initialized) return
@@ -119,21 +130,45 @@ export class Reader extends Component<Props, State> {
         this.panZoom!.setBounds(this.parentWidth, this.parentHeight, this.contentWidth, this.contentHeight)
     }
 
+    async loadPageJson(page: number) {
+        const user = globalState.user
+        if (!user) return
+        const { currentVolume, overlay } = user
+        if (!currentVolume || !overlay) return
+
+        try {
+            const pageNumber = (page + 1).toString().padStart(3, "0")
+            const path = `${currentVolume.path}/page${pageNumber}.json`
+            const json = await sourceGetJson(currentVolume.source, path)
+
+            const overlayPage = await PJ.validatePageAsync(json)
+
+            if (currentVolume.currentPage === page) {
+                overlay.page = immutable(overlayPage)
+                overlay.hint = null
+                overlay.hintId = -1
+                overlay.translation = ""
+            }
+        } catch (err) {
+            pushError(`Failed to load page ${page+1} translations`, err)
+        }
+    }
+
     async loadPage(page: number) {
-        const currentVolume = globalState.user?.currentVolume
-        if (!currentVolume) return
+        const user = globalState.user
+        if (!user) return
+        const { currentVolume, overlay } = user
+        if (!currentVolume || !overlay) return
 
         const { prevPage, image } = this
         if (page === prevPage) return
         this.prevPage = page
 
-        /*
-        if (prevPage >= 0) {
-            const direction = page > prevPage ? -1 : 1
-            this.fadeDirection = direction
-            // this.panZoom!.fadeOut(direction)
-        }
-        */
+        this.overlayManager.clearOverlay()
+
+        window.setTimeout(() => {
+            this.loadPageJson(page)
+        }, 300)
 
         const pageInfo = currentVolume.content.pages[page]!
         this.contentWidth = pageInfo.width
@@ -240,9 +275,31 @@ export class Reader extends Component<Props, State> {
         this.imageView.render()
     }
 
+    onHighlight = (aabbs: PJ.AABB[]) => {
+        const padding = 10
+        this.highlights.length = 0
+        for (const aabb of aabbs) {
+            this.highlights.push({
+                x: aabb.min[0] - padding,
+                y: aabb.min[1] - padding,
+                w: aabb.max[0] - aabb.min[0] + padding * 2,
+                h: aabb.max[1] - aabb.min[1] + padding * 2,
+            })
+        }
+        this.imageView.setHighlights(this.highlights)
+        this.panZoom?.requestAnimationFrame()
+    }
+
     onClick = (click: ClickInfo): boolean => {
+        const { panZoom } = this
         const currentVolume = globalState.user?.currentVolume
-        if (!currentVolume) return false
+        if (!currentVolume || !panZoom) return false
+
+        const localPos = { x: click.x, y: click.y }
+        if (this.overlayManager.onImageClick(localPos)) {
+            this.state.bottomBarVisible = false
+            return true
+        }
 
         /*
         if (click.doubleClick) {
@@ -341,6 +398,8 @@ export class Reader extends Component<Props, State> {
             this.rightViewport.scale = nextViewport!.scale
         }
 
+        this.overlayManager.updateViewport(viewport)
+
         const scene: ImageViewScene = {
             images: [
                 {
@@ -370,15 +429,17 @@ export class Reader extends Component<Props, State> {
                     imageHeight: prevPage.height,
                     alpha: Math.min(1, Math.max(leftMinFade, pageChangeVisualForce / -200.0)),
                 },
-            ].flat()
+            ].flat(),
+            higlightViewport: viewport,
         }
         this.imageView.setScene(scene)
         this.imageView.render()
     }
 
-    render(props: Props) {
+    render() {
         return <>
             <BottomBar visible={this.state.bottomBarVisible} />
+            <Overlay />
             <div ref={this.parentRef} className="viewer-parent">
             </div>
         </>

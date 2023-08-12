@@ -115,6 +115,19 @@ export class GraphicsContext {
         return texture
     }
 
+    createBuffer(target: number, usage: number, data: BufferSource) {
+        const { gl } = this
+
+        const buffer = gl.createBuffer()
+        this.check(buffer, "createBuffer()")
+
+        gl.bindBuffer(target, buffer)
+        gl.bufferData(target, data, usage)
+        gl.bindBuffer(target, null)
+
+        return buffer
+    }
+
     applyBinds(binds: UniformBinds, values: Record<string, any>) {
         const { gl } = this
         const bindCtx = this.#bindCtx

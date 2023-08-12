@@ -1,6 +1,7 @@
 import { createState, useEffect } from "kaiku"
 import * as V from "./utils/validation"
 import { setApiToken } from "./utils/api"
+import type { OverlayState } from "./reader/overlay-manager"
 
 export type Source = {
     url: string
@@ -88,6 +89,7 @@ export type User = {
     sources: Source[]
     volumes: Volume[]
     currentVolume: CurrentVolume | null
+    overlay: OverlayState | null
 }
 
 export type ErrorReport = {
@@ -221,6 +223,7 @@ function loadUser(): User | null {
             sources: [],
             volumes: [],
             currentVolume: null,
+            overlay: null,
         }
     } catch (err) {
         console.log(err)

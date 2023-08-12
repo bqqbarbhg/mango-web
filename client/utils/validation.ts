@@ -47,7 +47,13 @@ export type ValidatorResult<T extends Validator> = Exclude<ReturnType<T>, Fail>
 type ObjectValidator = {
     [key: string]: Validator
 }
+type TupleValidator = {
+    [key: number]: Validator
+}
 type ObjectResult<T extends ObjectValidator> = {
+    [key in keyof T]: ValidatorResult<T[key]>
+} | Fail
+type TupleResult<T extends TupleValidator> = {
     [key in keyof T]: ValidatorResult<T[key]>
 } | Fail
 type UnionValidator = {
@@ -106,6 +112,23 @@ export function array<T extends Validator>(spec: T): ((obj: any) => ValidatorRes
             result.push(r)
         }
         return result
+    }
+}
+
+export function tuple<T extends TupleValidator>(spec: T & ([any] | any[])): ((obj: any) => TupleResult<T> | Fail) {
+    return (obj: any) => {
+        const result = []
+        if (!Array.isArray(obj)) return fail("tuple", obj)
+        const length = obj.length
+        if (obj.length !== spec.length) return fail(`expected tuple with ${spec.length} values`, obj)
+        for (let i = 0; i < length; i++) {
+            const value = obj[i]
+            if (value === undefined && !obj.hasOwnProperty(i)) return fail(`[${i}]: missing`, obj)
+            const r = (spec as any)[i](value)
+            if (r instanceof Fail) return fail(`[${i}]`, value, r)
+            result.push(r)
+        }
+        return result as TupleResult<T>
     }
 }
 

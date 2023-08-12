@@ -1,9 +1,12 @@
 import { GraphicsContext, UniformBind } from "./graphics"
 import type { UniformBinds } from "./graphics"
 
-import vertexShader from "./shader/vertex.glsl"
-import fragmentShader from "./shader/fragment.glsl"
-import ImageView, { ImageViewImage, ImageViewScene } from "./image-view"
+import baseVS from "./shader/base-vs.glsl"
+import baseFS from "./shader/base-fs.glsl"
+import highlightVS from "./shader/highlight-vs.glsl"
+import highlightFS from "./shader/highlight-fs.glsl"
+
+import ImageView, { ImageViewHighlight, ImageViewImage, ImageViewScene } from "./image-view"
 import { KtxFile } from "../utils/ktx"
 import { MipCache } from "./mip-cache"
 
@@ -28,6 +31,13 @@ export default class ImageViewWebGL extends ImageView {
 
     mainShader: WebGLProgram
     mainBinds: UniformBinds
+
+    highlightShader: WebGLProgram
+    highlightBinds: UniformBinds
+
+    highlightVertices: WebGLBuffer | null = null
+    highlightIndices: WebGLBuffer | null = null
+    highlightCount: number = 0
 
     canvasWidth: number = 0
     canvasHeight: number = 0
@@ -70,13 +80,19 @@ export default class ImageViewWebGL extends ImageView {
             etc: gl.getExtension("WEBGL_compressed_texture_etc"),
         }
 
-        this.mainShader = gfx.compileProgram(vertexShader, fragmentShader)
+        this.mainShader = gfx.compileProgram(baseVS, baseFS)
         this.mainBinds = gfx.createUniformBinds(this.mainShader, {
             basePosition: UniformBind.vec2,
             quadScale: UniformBind.vec2,
             uvScale: UniformBind.vec2,
             mainTexture: UniformBind.texture2d,
             fadeAmount: UniformBind.float,
+        })
+
+        this.highlightShader = gfx.compileProgram(highlightVS, highlightFS)
+        this.highlightBinds = gfx.createUniformBinds(this.highlightShader, {
+            basePosition: UniformBind.vec2,
+            baseScale: UniformBind.vec2,
         })
 
         const whitePixel = new Uint8Array([0xff, 0xff, 0xff, 0xff])
@@ -340,6 +356,71 @@ export default class ImageViewWebGL extends ImageView {
         }
     }
 
+    setHighlights(highlights: ImageViewHighlight[]) {
+        const { gl, gfx } = this
+
+        gl.deleteBuffer(this.highlightVertices)
+        gl.deleteBuffer(this.highlightIndices)
+
+        this.highlightVertices = null
+        this.highlightIndices = null
+        this.highlightCount = 0
+
+        if (highlights.length > 0) {
+            let minX = +Infinity
+            let minY = +Infinity
+            let maxX = -Infinity
+            let maxY = -Infinity
+            for (const highlight of highlights) {
+                minX = Math.min(minX, highlight.x)
+                minY = Math.min(minY, highlight.y)
+                maxX = Math.max(maxX, highlight.x + highlight.w)
+                maxY = Math.max(maxY, highlight.y + highlight.h)
+            }
+
+            let gridWidth = 8
+            let gridHeight = 8
+            const grid = new Float32Array(gridWidth * gridHeight)
+
+            for (const highlight of highlights) {
+                const minU = Math.floor((highlight.x - minX) / (maxX - minX))
+                const minV = Math.floor((highlight.y - minX) / (maxX - minX))
+                const maxU = Math.ceil((highlight.x + highlight.w - minX) / (maxX - minX))
+                const maxV = Math.ceil((highlight.y + highlight.h - minX) / (maxX - minX))
+            }
+
+            const vertexBuffer = new Float32Array(highlights.length * 4 * 2)
+            const indexBuffer = new Uint16Array(highlights.length * 6)
+
+            for (let i = 0; i < highlights.length; i++) {
+                const highlight = highlights[i]!
+                const vb = i * 8
+                const ib = i * 6
+
+                vertexBuffer[vb + 0] = highlight.x
+                vertexBuffer[vb + 1] = highlight.y
+                vertexBuffer[vb + 2] = highlight.x + highlight.w
+                vertexBuffer[vb + 3] = highlight.y
+                vertexBuffer[vb + 4] = highlight.x
+                vertexBuffer[vb + 5] = highlight.y + highlight.h
+                vertexBuffer[vb + 6] = highlight.x + highlight.w
+                vertexBuffer[vb + 7] = highlight.y + highlight.h
+
+                const base = i * 4
+                indexBuffer[ib + 0] = base + 0
+                indexBuffer[ib + 1] = base + 1
+                indexBuffer[ib + 2] = base + 2
+                indexBuffer[ib + 3] = base + 2
+                indexBuffer[ib + 4] = base + 1
+                indexBuffer[ib + 5] = base + 3
+            }
+
+            this.highlightVertices = gfx.createBuffer(gl.ARRAY_BUFFER, gl.STATIC_DRAW, vertexBuffer)
+            this.highlightIndices = gfx.createBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.STATIC_DRAW, indexBuffer)
+            this.highlightCount = highlights.length
+        }
+    }
+
     render() {
         const { gl, gfx, scene } = this
 
@@ -380,5 +461,31 @@ export default class ImageViewWebGL extends ImageView {
             })
             gl.drawArrays(gl.TRIANGLES, 0, 6)
         }
+
+        if (this.highlightCount > 0) {
+            gl.useProgram(this.highlightShader)
+            gfx.applyBinds(this.highlightBinds, {
+                basePosition: {
+                    x: scene.higlightViewport.x / this.canvasWidth,
+                    y: scene.higlightViewport.y / this.canvasHeight
+                },
+                baseScale: {
+                    x: scene.higlightViewport.scale / this.canvasWidth,
+                    y: scene.higlightViewport.scale / this.canvasHeight
+                },
+            })
+
+            gl.enable(gl.BLEND)
+            gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.highlightVertices)
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.highlightIndices)
+            gl.enableVertexAttribArray(0)
+            gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
+            gl.drawElements(gl.TRIANGLES, this.highlightCount * 6, gl.UNSIGNED_SHORT, 0)
+            gl.disableVertexAttribArray(0)
+            gl.disable(gl.BLEND)
+        }
+
     }
 }

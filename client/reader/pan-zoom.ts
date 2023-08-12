@@ -338,6 +338,10 @@ export class PanZoom {
                         doubleClick,
                     })
 
+                    if (consumed) {
+                        this.lastClickTime = -1
+                    }
+
                     this.cancelClickTimeout()
 
                     if (!consumed) {

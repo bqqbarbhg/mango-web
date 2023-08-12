@@ -94,14 +94,23 @@ export function Index() {
             pushError(`Failed to load ${path}`, err)
         }
 
+        user.overlay = {
+            page: null,
+            hint: null,
+            hintId: -1,
+            translation: "",
+            rootRef: { current: null },
+        }
+
         if (sourceUuid !== null) {
             window.history.replaceState(null, "", window.location.pathname)
         }
+
+        state.pending = false
     }
 
     useEffect(() => {
         load()
-        state.pending = false
     })
 
     // @ts-ignore
