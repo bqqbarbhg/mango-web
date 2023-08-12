@@ -20,6 +20,12 @@ export const UniformBind = {
     vec2: (gl: WebGL2RenderingContext, ctx: UniformBindContext, bind: UniformBind, value: any) => {
         gl.uniform2f(bind.location, value.x, value.y)
     },
+    vec3: (gl: WebGL2RenderingContext, ctx: UniformBindContext, bind: UniformBind, value: any) => {
+        gl.uniform3f(bind.location, value.x, value.y, value.z)
+    },
+    vec4: (gl: WebGL2RenderingContext, ctx: UniformBindContext, bind: UniformBind, value: any) => {
+        gl.uniform4f(bind.location, value.x, value.y, value.z, value.w)
+    },
     texture2d: (gl: WebGL2RenderingContext, ctx: UniformBindContext, bind: UniformBind, value: any) => {
         const index = ctx.textureIndex++
         gl.activeTexture(gl.TEXTURE0 + index)
@@ -28,6 +34,16 @@ export const UniformBind = {
     },
     ignore: (_gl: WebGL2RenderingContext, _ctx: UniformBindContext, _bind: UniformBind, _value: any) => {
     },
+}
+
+type TextureFormat = {
+    internalFormat: number
+    format: number
+    type: number
+}
+
+export const TextureFormat = {
+    r8: { internalFormat: 0x8229, format: 0x1903, type: 0x1401 },
 }
 
 export class GraphicsContext {
@@ -101,16 +117,27 @@ export class GraphicsContext {
         })
     }
 
-    createTexture(image: HTMLImageElement) {
+    createTexture(format: TextureFormat, width: number, height: number, data: ArrayBufferView) {
         const { gl } = this
 
         const texture = gl.createTexture()
         this.check(texture, "createTexture()")
 
         gl.bindTexture(gl.TEXTURE_2D, texture)
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
-            gl.RGBA, gl.UNSIGNED_BYTE, image)
-        gl.generateMipmap(gl.TEXTURE_2D)
+        gl.texImage2D(gl.TEXTURE_2D, 0,
+            format.internalFormat,
+            width, height, 0,
+            format.format,
+            format.type,
+            data)
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAX_LOD, 0)
+
+        gl.bindTexture(gl.TEXTURE_2D, null)
 
         return texture
     }

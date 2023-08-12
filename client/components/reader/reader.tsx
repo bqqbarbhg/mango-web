@@ -276,7 +276,7 @@ export class Reader extends Component<Props, State> {
     }
 
     onHighlight = (aabbs: PJ.AABB[]) => {
-        const padding = 10
+        const padding = 0
         this.highlights.length = 0
         for (const aabb of aabbs) {
             this.highlights.push({
@@ -434,6 +434,11 @@ export class Reader extends Component<Props, State> {
         }
         this.imageView.setScene(scene)
         this.imageView.render()
+
+        if (this.imageView.renderRequested) {
+            this.imageView.renderRequested = false
+            this.panZoom?.requestAnimationFrame()
+        }
     }
 
     render() {

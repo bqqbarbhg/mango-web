@@ -37,6 +37,7 @@ export default class ImageView {
         higlightViewport: { x: 0, y: 0, scale: 1 },
     }
     mipCache: MipCache | null
+    renderRequested: boolean = false
 
     /*
     setViewport(viewport: Viewport): boolean {
@@ -64,6 +65,7 @@ export default class ImageView {
     }
 */
 
+    requestRender() { this.renderRequested = true }
     setMipCache(cache: MipCache) { this.mipCache = cache }
     setScene(scene: ImageViewScene) { this.scene = scene }
     setHighlights(highlights: ImageViewHighlight[]) { }
