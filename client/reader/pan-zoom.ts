@@ -137,6 +137,11 @@ export type ClickInfo = {
     doubleClick: boolean
 }
 
+export type DragInfo = {
+    x: number
+    y: number
+}
+
 export type ReleaseInfo = {
     fromZoom: boolean
 }
@@ -178,12 +183,16 @@ export class PanZoom {
     pageChangeVisualForce: number = 0
     pageChangeReleaseForce: number = 0
     pageChangeHideVisual: boolean = false
+    dragTouchId: TouchId | null = null
 
     // Callbacks
     viewportCallback: (viewport: Viewport, fade: number) => void = () => {}
     clickCallback: (click: ClickInfo) => boolean = () => false
     releaseCallback: (release: ReleaseInfo) => boolean = () => false
     clickTimeoutCallback: () => boolean = () => false
+    dragStartCallback: (drag: DragInfo) => boolean = () => false
+    dragMoveCallback: (drag: DragInfo) => void = () => {}
+    dragEndCallback: (drag: DragInfo, cancel: boolean) => void = () => {}
 
     constructor(element: HTMLElement, debug?: IPanZoomDebug) {
 
@@ -202,6 +211,17 @@ export class PanZoom {
 
     addTouch(id: TouchId, x: number, y: number) {
         this.removeTouch(id, false, -1, -1)
+
+        if (this.dragTouchId === null) {
+            const info = {
+                x: (x - this.clampedViewport.x) / this.clampedViewport.scale,
+                y: (y - this.clampedViewport.y) / this.clampedViewport.scale,
+            }
+            if (this.dragStartCallback(info)) {
+                this.dragTouchId = id
+                return
+            }
+        }
 
         if (this.touches.length >= 2) return
 
@@ -267,6 +287,15 @@ export class PanZoom {
     }
 
     updateTouch(id: TouchId, x: number, y: number) {
+        if (id === this.dragTouchId) {
+            const info = {
+                x: (x - this.clampedViewport.x) / this.clampedViewport.scale,
+                y: (y - this.clampedViewport.y) / this.clampedViewport.scale,
+            }
+            this.dragMoveCallback(info)
+            return
+        }
+
         const touch = this.findTouch(id)
         if (!touch) return
         this.pageChangeHideVisual = false
@@ -286,6 +315,16 @@ export class PanZoom {
     }
 
     removeTouch(id: TouchId, up: boolean, x: number, y: number) {
+        if (id === this.dragTouchId) {
+            this.dragTouchId = null
+            const info = {
+                x: (x - this.clampedViewport.x) / this.clampedViewport.scale,
+                y: (y - this.clampedViewport.y) / this.clampedViewport.scale,
+            }
+            this.dragEndCallback(info, !up)
+            return
+        }
+
         let index = 0
         const time = getTime()
         for (const touch of this.touches) {

@@ -1,5 +1,5 @@
 import { Component, useState, unwrap, useEffect, useRef, createState } from "kaiku";
-import { ClickInfo, PanZoom, ReleaseInfo } from "../../reader/pan-zoom"
+import { ClickInfo, DragInfo, PanZoom, ReleaseInfo } from "../../reader/pan-zoom"
 import { Viewport } from "../../reader/common";
 import ImageView, { ImageViewHighlight, ImageViewScene } from "../../reader/image-view";
 import ImageViewWebGL from "../../reader/image-view-webgl";
@@ -97,6 +97,10 @@ export class Reader extends Component<Props, State> {
 
                 this.panZoom.clickCallback = this.onClick
                 this.panZoom.releaseCallback = this.onRelease
+
+                this.panZoom.dragStartCallback = this.onDragStart
+                this.panZoom.dragMoveCallback = this.onDragMove
+                this.panZoom.dragEndCallback = this.onDragEnd
 
                 this.panZoom.clickTimeoutCallback = () => {
                     this.state.bottomBarVisible = !this.state.bottomBarVisible
@@ -347,6 +351,18 @@ export class Reader extends Component<Props, State> {
         }
 
         return false
+    }
+
+    onDragStart = (info: DragInfo) => {
+        return this.overlayManager.dragStart({ x: info.x, y: info.y })
+    }
+
+    onDragMove = (info: DragInfo) => {
+        this.overlayManager.dragMove({ x: info.x, y: info.y })
+    }
+
+    onDragEnd = (info: DragInfo, cancel: boolean) => {
+        this.overlayManager.dragEnd()
     }
 
     onKeyDown = (e: KeyboardEvent) => {

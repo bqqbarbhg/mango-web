@@ -25,6 +25,7 @@ function LoginForm() {
                 sources: [],
                 volumes: [],
                 currentVolume: null,
+                overlay: null,
             }
 
             localStorage.setItem("user", JSON.stringify({

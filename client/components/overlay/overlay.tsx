@@ -14,7 +14,7 @@ export function Overlay() {
         <div className="overlay-top">
             {/* @ts-ignore */}
             {state.hint ? <Hint hint={state.hint} key={state.hintId.toString()} /> : null}
-            {state.translation != "" ? <Translation text={state.translation} /> : null}
+            {state.translation !== null ? <Translation text={state.translation} /> : null}
         </div>
     </div>
 }

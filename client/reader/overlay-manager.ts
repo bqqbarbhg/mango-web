@@ -121,7 +121,7 @@ export type OverlayState = {
     page: PJ.Page | null
     hint: PJ.Hint | null
     hintId: number
-    translation: string
+    translation: string | null
     rootRef: { current: HTMLElement | null }
 }
 
@@ -207,7 +207,7 @@ export class OverlayManager {
                     this.updateHighlights(getSelectionRects(page, this.selection))
                     this.rootTarget = getSelectionTarget(page, this.selection)
                     this.setState({
-                        hint: immutable(hint),
+                        hint: hint ? immutable(hint) : null,
                         hintId: (this.state.hintId + 1) % 4096,
                         translation: "",
                     })
@@ -230,11 +230,11 @@ export class OverlayManager {
             this.updateRoot()
             return true
         } else {
-            if (this.selection !== null || this.state.translation !== "") {
+            if (this.selection !== null || this.state.translation !== null) {
                 this.selection = null
                 this.setState({
                     hint: null,
-                    translation: "",
+                    translation: null,
                 })
                 this.rootTarget.visible = false
                 this.updateHighlights([])
@@ -316,7 +316,7 @@ export class OverlayManager {
 
                 if (hint != this.state.hint) {
                     this.setState({
-                        hint: immutable(hint as any),
+                        hint: hint ? immutable(hint as any) : null,
                         hintId: (this.state.hintId + 1) % 4096,
                         translation: "",
                     })
@@ -347,7 +347,7 @@ export class OverlayManager {
             const hint = getAltHint(page.paragraphs[this.selection.paraIx]!, symIx, symIx + 1)
             if (hint != this.state.hint) {
                 this.setState({
-                    hint: immutable(hint as any),
+                    hint: hint ? immutable(hint as any) : null,
                     hintId: (this.state.hintId + 1) % 4096,
                     translation: "",
                 })
@@ -381,7 +381,7 @@ export class OverlayManager {
             page: null,
             hint: null,
             hintId: -1,
-            translation: "",
+            translation: null,
         })
         this.updateHighlights([])
         this.updateRoot()
