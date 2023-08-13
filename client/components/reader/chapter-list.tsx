@@ -2,7 +2,12 @@ import { MangoChapter, globalState } from "../../state"
 import { useFade } from "../../utils/fade"
 import { FillCircle } from "../common/fill-circle"
 
-function Chapter({ chapter }: { chapter: MangoChapter }) {
+function Chapter({ chapter, chapterIndex }: {
+    chapter: MangoChapter,
+    chapterIndex: number,
+}) {
+    const volume = globalState.user?.currentVolume
+    if (!volume) return null
 
     const onClick = () => {
         const volume = globalState.user?.currentVolume
@@ -10,12 +15,27 @@ function Chapter({ chapter }: { chapter: MangoChapter }) {
         volume.currentPage = chapter.startPage
     }
 
+    const firstPage = chapter.startPage
+    const lastPage = chapterIndex + 1 < volume.info.chapters.length
+        ? volume.info.chapters[chapterIndex + 1]!.startPage - 1
+        : volume.content.pages.length
+
+    const totalCount = (lastPage - firstPage) + 1
+    let readCount = 0
+    for (let page = firstPage; page <= lastPage; page++) {
+        const zeroPage = page - 1
+        const pageBase = Math.floor(zeroPage / 32)
+        const pageBit = 1 << (zeroPage % 32)
+        const readBits = volume.readPages[pageBase] ?? 0
+        readCount += (pageBit & readBits) !== 0 ? 1 : 0
+    }
+
     return <div
         className="chapter-list-chapter"
         onClick={onClick}
     >
         <div className="chapter-list-fill">
-            <FillCircle amount={0.2} />
+            <FillCircle amount={readCount} max={totalCount} />
         </div>
         <div>
             <div>{chapter.title.en}</div>
@@ -36,6 +56,7 @@ export function ChapterList(props: Props) {
         "hide": fade.hide,
         "cull": fade.cull,
     }}>
-        {fade.cull ? null : volume.info.chapters.map(c => <Chapter chapter={c} />)}
+        {fade.cull ? null : volume.info.chapters.map((c, ix) =>
+            <Chapter chapter={c} chapterIndex={ix} />)}
     </div>
 }

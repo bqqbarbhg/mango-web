@@ -81,6 +81,7 @@ export type CurrentVolume = {
     content: MangoContent
     source: SourceInfo
     currentPage: number
+    readPages: number[]
 }
 
 export type User = {

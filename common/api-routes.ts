@@ -105,6 +105,7 @@ const apiRoutes = {
                         t.null,
                     ]),
                     page: t.union([t.number, t.null]),
+                    readPages: t.array(t.number),
                 }),
                 t.null,
             ]),

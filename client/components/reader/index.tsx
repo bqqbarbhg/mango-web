@@ -28,11 +28,15 @@ export function Index() {
         let sourceUrl: string | null = null
 
         let page = 1
+        let readPages: number[] = []
 
         try {
             const { result: state } = await apiCall("GET /read/:*path", { path })
             if (state && state.page) {
                 page = state.page
+            }
+            if (state && state.readPages) {
+                readPages = state.readPages
             }
 
             if (state && state.source) {
@@ -85,7 +89,8 @@ export function Index() {
                 path, source,
                 info: immutable(validate(MangoInfo, mangoInfo)),
                 content: immutable(validate(MangoContent, mangoContent)),
-                currentPage: 0,
+                currentPage: page - 1,
+                readPages,
             }
 
             user.currentVolume = currentVolume

@@ -15,6 +15,7 @@ import { sourceGetJson } from "../../utils/source";
 import * as V from "../../utils/validation"
 import * as PJ from "../../reader/page-json"
 import { immutable } from "kaiku"
+import { apiCall } from "../../utils/api";
 
 type Props = { }
 type State = {
@@ -43,6 +44,8 @@ export class Reader extends Component<Props, State> {
     rightViewportFade: Viewport = { x: 0, y: 0, scale: 1 }
     overlayManager: OverlayManager
     highlights: ImageViewHighlight[] = []
+    pageJsonTimeout: number | null = null
+    pageReadTimeout: number | null = null
 
     constructor(props: Props) {
         super(props)
@@ -158,6 +161,29 @@ export class Reader extends Component<Props, State> {
         }
     }
 
+    async markPageRead(page: number) {
+        const currentVolume = globalState.user?.currentVolume
+        if (!currentVolume) return
+        if (currentVolume.currentPage !== page) return
+
+        const pageBase = Math.floor(page / 32)
+        const pageBit = 1 << (page % 32)
+        while (currentVolume.readPages.length <= pageBase) {
+            currentVolume.readPages.push(0)
+        }
+        currentVolume.readPages[pageBase] |= pageBit
+
+        try {
+            await apiCall("POST /read/:*path", {
+                sourceUuid: currentVolume.source.uuid,
+                path: currentVolume.path,
+                page: page + 1,
+            })
+        } catch (err) {
+            pushError("Failed to update status", err, { deduplicate: true })
+        }
+    }
+
     async loadPage(page: number) {
         const user = globalState.user
         if (!user) return
@@ -170,9 +196,15 @@ export class Reader extends Component<Props, State> {
 
         this.overlayManager.clearOverlay()
 
-        window.setTimeout(() => {
-            this.loadPageJson(page)
-        }, 300)
+        if (this.pageJsonTimeout) {
+            window.clearTimeout(this.pageJsonTimeout)
+        }
+        if (this.pageReadTimeout) {
+            window.clearTimeout(this.pageReadTimeout)
+        }
+
+        this.pageJsonTimeout = window.setTimeout(() => this.loadPageJson(page), 300)
+        this.pageReadTimeout = window.setTimeout(() => this.markPageRead(page), 800)
 
         const pageInfo = currentVolume.content.pages[page]!
         this.contentWidth = pageInfo.width
