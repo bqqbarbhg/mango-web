@@ -113,6 +113,7 @@ function getSelectionTarget(page: PJ.Page, selection: Selection) {
         x: (minX + maxX) * 0.5,
         y: (minY + maxY) * 0.5,
         width: (maxX - minX) * 0.5,
+        height: (maxY - minY) * 0.5,
         visible: true,
     }
 }
@@ -135,11 +136,13 @@ export class OverlayManager {
     viewport: Viewport = { x: 0, y: 0, scale: 1 }
     state: OverlayState
     prevClickPos: Point = { x: 0, y: 0 }
-    rootOnRight = false
+    rootOnLeft = false
+    rootOnTop = false
+    rootVertical = false
     rootPos = { x: 0, y: 0 }
     rootSize = { x: 0, y: 0 }
     rootVisible = false
-    rootTarget = { x: 0, y: 0, width: 0, visible: false }
+    rootTarget = { x: 0, y: 0, width: 0, height: 0, visible: false }
 
     highlightCallback: (aabbs: PJ.AABB[]) => void = () => {}
 
@@ -187,6 +190,7 @@ export class OverlayManager {
                     x: (cluster.aabb.min[0] + cluster.aabb.max[0]) * 0.5,
                     y: (cluster.aabb.min[1] + cluster.aabb.max[1]) * 0.5,
                     width: (cluster.aabb.max[0] - cluster.aabb.min[0]) * 0.5,
+                    height: (cluster.aabb.max[1] - cluster.aabb.min[1]) * 0.5,
                     visible: true,
                 }
 
@@ -401,43 +405,84 @@ export class OverlayManager {
 
         if (!this.rootVisible) return
 
+        const isPhone = viewSize.x < 500
+        const borderPadding = isPhone ? 5 : 10
+
+        const fullWidth = viewSize.x - 2 * borderPadding
+        const minWidth = Math.min(350, fullWidth)
+        const maxWidth = 450
+
+        const minHeight = Math.min(300, viewSize.y * 0.8 - 2 * borderPadding)
+        const maxHeight = 500
+
         const elemSize = {
-            x: viewSize.x * 0.45,
-            y: viewSize.y * 0.3,
+            x: isPhone ? fullWidth : Math.min(Math.max(viewSize.x * 0.45, minWidth), maxWidth),
+            y: Math.min(Math.max(viewSize.y * 0.3, minHeight), maxHeight),
         }
 
         const minPos = {
-            x: viewSize.x * 0.02,
-            y: viewSize.y * 0.02,
+            x: borderPadding,
+            y: borderPadding,
         }
         const maxPos = {
-            x: viewSize.x * 0.98 - elemSize.x,
-            y: viewSize.y * 0.98 - elemSize.y,
+            x: viewSize.x - elemSize.x - borderPadding,
+            y: viewSize.y - elemSize.y - borderPadding,
         }
 
         const target = {
             x: rootTarget.x * viewport.scale + viewport.x,
             y: rootTarget.y * viewport.scale + viewport.y,
             width: rootTarget.width * viewport.scale,
+            height: rootTarget.height * viewport.scale,
             visible: rootTarget.visible,
         }
 
-        if (!this.rootOnRight && target.x > minPos.x + viewSize.x * 0.52) {
-            this.rootOnRight = true
-        } else if (this.rootOnRight && target.x < minPos.x + viewSize.x * 0.48) {
-            this.rootOnRight = false
+        if (elemSize.x >= viewSize.x * 0.90) {
+            this.rootVertical = true
+        } else if (elemSize.x <= viewSize.x * 0.87) {
+            this.rootVertical = false
+        }
+
+        if (isPhone) {
+            this.rootVertical = true
         }
 
         let targetPos
-        if (this.rootOnRight) {
-            targetPos = {
-                x: target.x - elemSize.x * 1.05 - target.width,
-                y: target.y - elemSize.y * 0.5,
+        if (this.rootVertical) {
+            if (!this.rootOnTop && target.y > minPos.y + elemSize.y * 0.82) {
+                this.rootOnTop = true
+            } else if (this.rootOnTop && target.y < minPos.y + elemSize.y * 0.8) {
+                this.rootOnTop = false
+            }
+
+            if (this.rootOnTop) {
+                targetPos = {
+                    x: target.x - elemSize.x * 0.5,
+                    y: target.y - target.height - elemSize.y * 1.05,
+                }
+            } else {
+                targetPos = {
+                    x: target.x - elemSize.x * 0.5,
+                    y: target.y + target.height + elemSize.y * 0.05,
+                }
             }
         } else {
-            targetPos = {
-                x: target.x + target.width + elemSize.x * 0.05,
-                y: target.y - elemSize.y * 0.5,
+            if (!this.rootOnLeft && target.x > minPos.x + viewSize.x * 0.52) {
+                this.rootOnLeft = true
+            } else if (this.rootOnLeft && target.x < minPos.x + viewSize.x * 0.48) {
+                this.rootOnLeft = false
+            }
+
+            if (this.rootOnLeft) {
+                targetPos = {
+                    x: target.x - elemSize.x * 1.05 - target.width,
+                    y: target.y - elemSize.y * 0.5,
+                }
+            } else {
+                targetPos = {
+                    x: target.x + target.width + elemSize.x * 0.05,
+                    y: target.y - elemSize.y * 0.5,
+                }
             }
         }
 

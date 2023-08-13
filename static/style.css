@@ -1,4 +1,8 @@
 
+:root {
+    --hint-margin: 8px;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -186,9 +190,12 @@ body {
     /* transition: all 0.1s linear; */
     display: none;
     background-color: rgb(255, 251, 244);
-    border-radius: 0.5em;
-    box-shadow: 0em 1em 2em rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    box-shadow:
+        0px 8px 20px rgba(0, 0, 0, 0.2),
+        0px 0px 0px 1px rgba(0, 0, 0, 0.15);
     z-index: 2;
+    overflow: hidden;
 }
 
 .overlay-top {
@@ -205,6 +212,7 @@ body {
 
 .radical-list {
     padding-bottom: 0.2em;
+    margin-bottom: var(--hint-margin);
     display: flex;
     flex-wrap: wrap;
     gap: 0.5em;
@@ -228,30 +236,73 @@ body {
 }
 
 .hint-container {
-    padding: 0.5em;
+    padding-top: 8px;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 8px;
+}
+
+.hint-container:first-child {
+    padding-top: 20px;
+}
+
+.hint-container:last-child {
+    padding-bottom: 20px;
+}
+
+.hint-content {
+    margin-left: 16px;
+    margin-right: 16px;
 }
 
 .hint-selected {
     background-color: rgb(241, 231, 213);
 }
 
+.hint-text-container {
+    margin-top: 0.25em;
+    margin-bottom: var(--hint-margin);
+}
+
 .hint-title {
     font-size: 1.5em;
+    margin-bottom: var(--hint-margin);
 }
 
 .hint-gloss {
     color: #333;
+    list-style-type: none;
+    margin-bottom: var(--hint-margin);
+}
+
+.hint-gloss li {
+    display: flex;
+}
+
+.gloss-more {
+    color: #777;
+    font-size: 0.9em;
+}
+
+.hint-gloss li::before {
+    content: "\00BB";
+    font-size: 0.8em;
+    line-height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    padding-right: 6px;
+    color: #777;
 }
 
 .hint-conjugation {
     color: #777;
     font-style: italic;
-    font-size: 0.8em;
+    font-size: 0.9em;
 }
 
 .hint-label {
     color: #000;
-    font-size: 0.7em;
+    font-size: 0.9em;
 }
 
 .hint-text {
@@ -269,7 +320,7 @@ body {
 }
 
 .wk-span {
-    font-size: 0.7em;
+    font-size: 0.9em;
     color: #333;
     padding: 0.1em 0.1em;
     margin: -0.1em -0.08em;

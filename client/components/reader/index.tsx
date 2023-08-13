@@ -103,7 +103,7 @@ export function Index() {
             page: null,
             hint: null,
             hintId: -1,
-            translation: "",
+            translation: null,
             rootRef: { current: null },
         }
 

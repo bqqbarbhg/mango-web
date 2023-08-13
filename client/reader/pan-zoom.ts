@@ -635,9 +635,11 @@ export class PanZoom {
                         }
                     }
                 } else {
-                    this.action = {
-                        action: "hold",
-                        noClampDirection,
+                    if (this.action?.action !== "interpolate") {
+                        this.action = {
+                            action: "hold",
+                            noClampDirection,
+                        }
                     }
                 }
             }
@@ -706,20 +708,7 @@ export class PanZoom {
                         this.fadeEndCallbacks = []
                     }
                 }
-            } else if (action?.action === "interpolate") {
-                const t = clamp((time - action.startTime) / action.duration, 0.0, 1.0)
-                const u = smoothStep(t)
-
-                const { src, dst } = action
-                this.viewport.x = lerp(src.x, dst.x, u)
-                this.viewport.y = lerp(src.y, dst.y, u)
-                this.viewport.scale = lerp(src.scale, dst.scale, u)
-
-                this.release = null
-                if (t === 1) {
-                    this.action = null
-                }
-            } else {
+            } else if (this.action?.action !== "interpolate") {
                 this.action = null
             }
 
@@ -741,6 +730,22 @@ export class PanZoom {
                 const releaseAlpha = delta / releaseFixedDt
                 this.viewport.x = release.nextX * releaseAlpha + release.prevX * (1.0 - releaseAlpha)
                 this.viewport.y = release.nextY * releaseAlpha + release.prevY * (1.0 - releaseAlpha)
+            }
+        }
+
+        if (this.action?.action === "interpolate") {
+            const action = this.action
+            const t = clamp((time - action.startTime) / action.duration, 0.0, 1.0)
+            const u = smoothStep(t)
+
+            const { src, dst } = action
+            this.viewport.x = lerp(src.x, dst.x, u)
+            this.viewport.y = lerp(src.y, dst.y, u)
+            this.viewport.scale = lerp(src.scale, dst.scale, u)
+
+            this.release = null
+            if (t === 1) {
+                this.action = null
             }
         }
     }

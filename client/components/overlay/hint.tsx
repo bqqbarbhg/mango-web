@@ -16,6 +16,7 @@ function RadicalList({ radicals }: { radicals: PJ.Radical[] }) {
 
 type HintSelectionState = {
     selectedIndex: number
+    extraExpand: boolean
 }
 
 type ResultProps = {
@@ -25,7 +26,8 @@ type ResultProps = {
 }
 
 function Result({ hintSelectionState, result, index }: ResultProps) {
-    const expand = hintSelectionState.selectedIndex == index
+    const expand = hintSelectionState.selectedIndex === index
+    const extraExpand = hintSelectionState.extraExpand
 
     let titleText = ""
 
@@ -41,13 +43,41 @@ function Result({ hintSelectionState, result, index }: ResultProps) {
         }
     }
 
+    /*
     let glossText = ""
     let maxGloss = 50
 
     for (const gloss of result.gloss) {
         if (glossText && glossText.length + gloss.length >= maxGloss && !expand) break
-        if (glossText != "") glossText += ", "
+        if (glossText != "") glossText += "\n"
         glossText += gloss
+        // glossText += gloss.replace(/ /g, "\u202F")
+    }
+    */
+    const numGloss = result.gloss.length
+
+    let glossPart = []
+    let maxGloss = 3
+    if (expand) {
+        if (extraExpand) {
+            maxGloss = 1000
+        } else {
+            maxGloss = 6
+            if (numGloss > maxGloss) {
+                maxGloss = maxGloss - 1
+            }
+        }
+    }
+
+    for (const gloss of result.gloss) {
+        if (glossPart.length >= maxGloss) {
+            const missing = numGloss - glossPart.length
+            if (expand && !extraExpand) {
+                glossPart.push(<li className="gloss-more">(tap for {missing} more)</li>)
+            }
+            break
+        }
+        glossPart.push(<li>{gloss}</li>)
     }
 
     let kanjiText = ""
@@ -91,21 +121,42 @@ function Result({ hintSelectionState, result, index }: ResultProps) {
             "hint-container": true,
             "hint-selected": expand,
         }}
-        onClick={() => { hintSelectionState.selectedIndex = index }}
+        onClick={() => {
+            if (hintSelectionState.selectedIndex === index) {
+                hintSelectionState.extraExpand = !hintSelectionState.extraExpand
+            } else {
+                hintSelectionState.selectedIndex = index
+                hintSelectionState.extraExpand = false
+            }
+            window.queueMicrotask(() => {
+                const element = document.querySelector(".hint-selected")
+                if (element) {
+                    console.log(element)
+                    element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "nearest",
+                    })
+                }
+            })
+        }}
     >
         <div className="hint-title">{titleText}</div>
-        {result.radicals ? <RadicalList radicals={result.radicals} /> : null}
-        <div className="hint-gloss">{glossText}</div>
-        {conjText ? <div className="hint-conjugation">{conjText}</div> : null}
-        {kanjiText ? <div>
-            <span className="hint-label">Writing: </span>
-            <span className="hint-text">{kanjiText}</span>
-        </div> : null}
-        {kanaText ? <div>
-            <span className="hint-label">Reading: </span>
-            <span className="hint-text">{kanaText}</span>
-        </div> : null}
-        {wkPart}
+        <div className="hint-content">
+            {result.radicals ? <RadicalList radicals={result.radicals} /> : null}
+            <ul className="hint-gloss">{glossPart}</ul>
+            {conjText ? <div className="hint-conjugation">{conjText}</div> : null}
+            {(kanjiText || kanaText) ? <div className="hint-text-container">
+                {kanjiText ? <div>
+                    <span className="hint-label">Writing: </span>
+                    <span className="hint-text">{kanjiText}</span>
+                </div> : null}
+                {kanaText ? <div>
+                    <span className="hint-label">Reading: </span>
+                    <span className="hint-text">{kanaText}</span>
+                </div> : null}
+            </div> : null}
+            {wkPart}
+        </div>                
     </div>
 }
 
@@ -113,9 +164,12 @@ type HintProps = {
     hint: PJ.Hint,
 }
 export function Hint({ hint }: HintProps) {
-    const hintSelectionState = useState({ selectedIndex: -1 })
+    const hintSelectionState = useState({
+        selectedIndex: -1,
+        extraExpand: false,
+    })
     return <div className="overlay-top-scroll">
-        <div>
+        <div className="hint-top">
             {hint.results.map((r, ix) =>
                 <Result
                     hintSelectionState={hintSelectionState}
