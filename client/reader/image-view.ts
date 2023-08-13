@@ -39,32 +39,6 @@ export default class ImageView {
     mipCache: MipCache | null
     renderRequested: boolean = false
 
-    /*
-    setViewport(viewport: Viewport): boolean {
-        const dx = this.viewport.x - viewport.x
-        const dy = this.viewport.y - viewport.y
-        const ds = this.viewport.scale - viewport.scale
-
-        if (Math.abs(dx) >= 0.1 || Math.abs(dy) >= 0.1 || Math.abs(ds) >= 0.001) {
-            this.viewport.x = viewport.x
-            this.viewport.y = viewport.y
-            this.viewport.scale = viewport.scale
-            return true
-        } else {
-            return false
-        }
-    }
-
-    setFade(fade: number): boolean {
-        if (this.fadeAlpha !== fade) {
-            this.fadeAlpha = fade
-            return true
-        } else {
-            return false
-        }
-    }
-*/
-
     requestRender() { this.renderRequested = true }
     setMipCache(cache: MipCache) { this.mipCache = cache }
     setScene(scene: ImageViewScene) { this.scene = scene }

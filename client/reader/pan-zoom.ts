@@ -592,12 +592,6 @@ export class PanZoom {
     updateAction() {
         const time = getTime()
 
-        /*
-        if (this.action?.action === "fade") {
-            this.touches = []
-        }
-        */
-
         const { touches } = this
         for (const touch of touches) {
             this.updateTouchPosition(touch, time)
@@ -948,10 +942,7 @@ export class PanZoom {
             let localX = 0.5
             let localY = 0.5
             if (localWidth < 1.0) {
-                console.log(this.viewport.x)
-                console.log(x)
                 localX = clamp((x - this.viewport.x) / (contentWidth * this.viewport.scale), 0.5*localWidth, 1.0 - 0.5*localWidth)
-                console.log(localX)
             }
             if (localHeight < 1.0) {
                 localY = clamp((y - this.viewport.y) / (contentHeight * this.viewport.scale), 0.5*localHeight, 1.0 - 0.5*localHeight)

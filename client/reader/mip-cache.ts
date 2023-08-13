@@ -145,7 +145,6 @@ export class MipCache {
             })
             while (this.loadedFiles.length > maxFiles) {
                 const file = this.loadedFiles.pop()!
-                console.log(`UNLOAD ${file.name}`)
                 for (let i = 0; i < file.pageCount; i++) {
                     const page = this.pages[file.pageStart + i]!
                     page.mipData[file.mipLevel] = null
@@ -194,23 +193,9 @@ export class MipCache {
         this.loadPriorityFiles()
     }
 
-    /*
-    loadPage(index: number, maxMip: number) {
-        const page = this.pages[index]!
-        for (let level = maxMip; level < page.mipFiles.length; level++) {
-            const fileIndex = page.mipFiles[level]!
-            const file = this.files[fileIndex]!
-            file.lruSerial = ++this.lruSerial
-            if (file.state === "unloaded") {
-                this.loadFile(file)
-            }
-        }
-    }
-    */
     loadPriorityFiles() {
         if (this.isLoading) return
         if (!this.hasUnloadedFiles) return
-        console.log("loading")
 
         this.priorityFiles.sort((a, b) => b.priority - a.priority)
         for (const file of this.priorityFiles) {
@@ -295,105 +280,3 @@ export class MipCache {
         return this.pages[index]!
     }
 }
-
-/*
-export class MipCache {
-    mips = new Map<number, MipData[]>()
-
-    getPageMips(pageIndex: number): MipData[] | null {
-        return this.mips.get(pageIndex) ?? null
-    }
-}
-
-export class MipCacheManager {
-    cache: MipCache
-    page: number = 0
-    mipBatchSize = [1, 1, 4, 16]
-    mipFiles: MipFile[][]
-    source: SourceInfo
-    path: string
-    format: string
-
-    constructor(cache: MipCache, pageCount: number, source: SourceInfo, path: string, format: string) {
-        this.cache = cache
-        this.source = source
-        this.path = path
-        this.format = format
-
-        const mipAmount = this.mipBatchSize.length
-
-        const mipFiles: MipFile[][] = []
-        for (let mipI = 0; mipI < mipAmount; mipI++) {
-            const batchSize = this.mipBatchSize[mipI]!
-            const files: MipFile[] = []
-            for (let base = 0; base < pageCount; base += batchSize) {
-                const filePages = Math.min(pageCount - base, batchSize)
-                files.push({
-                    mips: null,
-                    basePage: base,
-                    mipLevel: mipI,
-                    pageCount: filePages,
-                    state: "unloaded"
-                })
-            }
-            mipFiles.push(files)
-        }
-        this.mipFiles = mipFiles
-    }
-
-    setPage(page: number) {
-        this.page = page
-        for (const mips of this.mipFiles) {
-            for (const mip of mips) {
-                if (page < mip.basePage) continue
-                if (page >= mip.basePage + mip.pageCount) continue
-                console.log(mip)
-                if (mip.state === "unloaded") {
-                    this.loadMipFile(mip)
-                }
-            }
-        }
-    }
-
-    async loadMipFile(mipFile: MipFile) {
-        const page = (mipFile.basePage + 1).toString().padStart(3, "0")
-        const batchSize = this.mipBatchSize[mipFile.mipLevel]!
-        const name = batchSize > 1
-            ? `pages${page}.${this.format}.${mipFile.mipLevel}.mips`
-            : `page${page}.${this.format}.${mipFile.mipLevel}.mip`
-        const path = `${this.path}/${name}`
-
-        mipFile.state = "loading"
-
-        try {
-            const result = await sourceGetBuffer(this.source, path)
-            const mips = parseMipFile(new DataView(result))
-            if (mips.length !== mipFile.pageCount) {
-                throw new Error("unexpected mip count")
-            }
-
-            for (let i = 0; i < mipFile.pageCount; i++) {
-                const pageI = mipFile.basePage + i
-                let mipDatas = this.cache.mips.get(pageI)
-                if (!mipDatas) {
-                    mipDatas = Array(this.mipBatchSize.length).fill(null)
-                    this.cache.mips.set(pageI, mipDatas)
-                }
-                mipDatas[mipFile.mipLevel] = mips[i]!
-            }
-
-            mipFile.mips = mips
-            mipFile.state = "loaded"
-        } catch (err) {
-            const begin = mipFile.basePage + 1
-            if (mipFile.pageCount > 1) {
-                const end = begin + mipFile.pageCount - 1
-                pushError(`Failed to load page images ${begin}-${end}`, err)
-            } else {
-                pushError(`Failed to load page image ${begin}`, err)
-            }
-            mipFile.state = "error"
-        }
-    }
-}
-*/

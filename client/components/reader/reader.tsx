@@ -78,20 +78,6 @@ export class Reader extends Component<Props, State> {
                     this.panZoom?.requestAnimationFrame()
                 }
 
-                /*
-                this.image.addEventListener("load", () => {
-                    this.panZoom!.onFadeEnd(() => {
-                        updateSize()
-                        this.panZoom!.resetView()
-                        this.imageView.setViewport(this.panZoom!.viewport)
-                        if (this.fadeDirection !== 0) {
-                            this.panZoom!.fadeIn(this.fadeDirection)
-                        }
-                        this.imageView.render()
-                    })
-                })
-                */
-
                 this.imageFormat = this.imageView.getImageFormat()
                 const observer = new ResizeObserver(updateSize)
                 observer.observe(parent)
@@ -220,46 +206,6 @@ export class Reader extends Component<Props, State> {
         }
 
         this.panZoom?.requestAnimationFrame()
-
-        /*
-        const pageNumber = (page + 1).toString().padStart(3, "0")
-        const ext = this.imageFormat ?? currentVolume.content.imageFormat
-        const imageUrl = `${currentVolume.source.url}/${currentVolume.path}/page${pageNumber}.${ext}`
-
-        try {
-            const result = await fetchXHR(imageUrl, {
-                cancel: this.pageCancel,
-            })
-
-            const ktx = parseKtx(result, {
-                keyValueTypes: {
-                    "mango:json": ktxJson,
-                },
-            })
-
-            const mangoJson = ktx.keyValuePairs.find(kv => kv.key === "mango:json")
-            const originalSize = mangoJson?.value.originalSize
-            this.contentWidth = originalSize.x ?? ktx.header.pixelWidth
-            this.contentHeight = originalSize.y ?? ktx.header.pixelHeight
-            this.updateBounds()
-
-            this.panZoom!.onFadeEnd(() => {
-                this.imageView.setImage("ktx", ktx)
-                this.panZoom!.resetView()
-                this.imageView.setViewport(this.panZoom!.viewport)
-                if (this.fadeDirection !== 0) {
-                    this.panZoom!.fadeIn(this.fadeDirection)
-                }
-                this.imageView.render()
-            })
-        } catch (err) {
-            if (err instanceof CancelError) {
-                // Nop
-            } else {
-                pushError("Failed to load page", err)
-            }
-        }
-        */
     }
 
     componentDidMount(): void {
@@ -337,22 +283,6 @@ export class Reader extends Component<Props, State> {
             return true
         }
 
-        /*
-        if (click.doubleClick) {
-            const viewport = this.panZoom!.clampedViewport
-            const parentWidth = this.panZoom!.parentWidth
-            const pageX = click.x * viewport.scale + viewport.x
-            const page = currentVolume.currentPage
-            if (pageX < parentWidth * 0.33 && page > 0) {
-                currentVolume.currentPage = page - 1
-                return true
-            } else if (pageX > parentWidth * 0.66 && page < currentVolume.content.pages.length) {
-                currentVolume.currentPage = page + 1
-                return true
-            }
-        }
-        */
-
         return false
     }
 
@@ -409,13 +339,6 @@ export class Reader extends Component<Props, State> {
     }
 
     onViewport = (viewport: Viewport, _: number) => {
-        /*
-        let invalidated = this.imageView.setViewport(viewport)
-        invalidated = this.imageView.setFade(fadeAmount) ? true : invalidated
-        if (invalidated) {
-            this.imageView.render()
-        }
-        */
         const currentVolume = globalState.user?.currentVolume
         const { panZoom } = this
         if (!currentVolume || !panZoom) return
