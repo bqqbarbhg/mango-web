@@ -34,7 +34,7 @@ export function Index() {
             Refresh
         </button>
         <div>
-            {user.volumes.map(volume => <Volume volume={volume} />)}
+            {user.volumes.map(volume => <div key={volume.volume.path}><Volume volume={volume} key={volume.volume.path} /></div>)}
         </div>
     </div>
 }

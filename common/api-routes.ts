@@ -80,6 +80,15 @@ const apiRoutes = {
     },
 
     // -- volumes --
+    "GET /volumes": {
+        req: t.type({ }),
+        res: t.type({
+            sources: t.array(t.type({
+                path: t.string,
+                latestPage: t.union([t.number, t.null]),
+            })),
+        }),
+    },
     "POST /read/:*path": {
         req: t.type({
             path: t.string,

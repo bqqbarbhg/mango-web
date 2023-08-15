@@ -1,4 +1,5 @@
 import { Viewport, clickTime, doubleTapDistance, doubleTapThreshold } from "./common"
+import { lerp, clamp, smoothStep } from "../utils/math"
 
 type TouchId = number | string
 type Touch = {
@@ -50,10 +51,6 @@ interface IPanZoomDebug {
     render(panZoom: PanZoom): void
 }
 
-function lerp(a: number, b: number, t: number) {
-    return a * (1.0 - t) + b * t
-}
-
 function absLerp(a: number, b: number, t: number, absT: number) {
     const v = a * (1.0 - t) + b * t
     const d = b - v
@@ -62,16 +59,6 @@ function absLerp(a: number, b: number, t: number, absT: number) {
 
 function eerp(a: number, b: number, t: number) {
     return Math.pow(a, 1.0 - t) * Math.pow(b, t)
-}
-
-function clamp(x: number, minX: number, maxX: number) {
-    return Math.min(Math.max(x, minX), maxX)
-}
-
-function smoothStep(t: number) {
-    if (t <= 0.0) return 0.0
-    if (t >= 1.0) return 1.0
-    return t * t * (3.0 - 2.0 * t)
 }
 
 type ActionHold = {

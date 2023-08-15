@@ -247,6 +247,8 @@ export default class ImageViewWebGL extends ImageView {
             }
 
             this.textureCache.set(index, { mipMin, mipMax, texture, uvScale, lruSerial })
+
+            this.hasLoadedRealTexture = true
         } else {
             this.textureCache.set(index, {
                 mipMin, mipMax, lruSerial,

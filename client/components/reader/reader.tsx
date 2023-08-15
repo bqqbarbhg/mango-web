@@ -16,12 +16,19 @@ import * as V from "../../utils/validation"
 import * as PJ from "../../reader/page-json"
 import { immutable } from "kaiku"
 import { apiCall } from "../../utils/api";
+import { ChapterList } from "../page-list/page-list";
 
 type Props = { }
 type State = {
     bottomBarVisible: boolean
+    hasLoadedRealTexture: boolean
+    hasLoaded: boolean
     ready: boolean
+    closed: boolean
 }
+
+export let readerInstance: Reader | null = null
+
 export class Reader extends Component<Props, State> {
     panZoom: PanZoom | null = null
     parentRef = useRef<HTMLElement>()
@@ -51,7 +58,10 @@ export class Reader extends Component<Props, State> {
         super(props)
         this.state = createState({
             bottomBarVisible: false,
+            hasLoadedRealTexture: false,
+            hasLoaded: false,
             ready: false,
+            closed: false,
         })
 
         this.image = new Image()
@@ -117,6 +127,22 @@ export class Reader extends Component<Props, State> {
             this.mipCache.setPreloadPage(currentVolume.currentPage)
             this.loadPage(currentVolume.currentPage)
         })
+
+        useEffect(() => {
+            if (this.state.hasLoaded) return
+            const currentVolume = globalState.user?.currentVolume
+            if (!currentVolume) return
+
+            const transition = globalState.transition
+            if (transition) {
+                if (transition.done && this.state.hasLoadedRealTexture && this.state.ready) {
+                    globalState.transition = null
+                    globalState.route = globalState.transitionRoute!
+                    globalState.transitionRoute = null
+                    this.state.hasLoaded = true
+                }
+            }
+        })
     }
 
     updateBounds() {
@@ -140,7 +166,7 @@ export class Reader extends Component<Props, State> {
                 overlay.page = immutable(overlayPage)
                 overlay.hint = null
                 overlay.hintId = -1
-                overlay.translation = ""
+                overlay.translation = null
             }
         } catch (err) {
             pushError(`Failed to load page ${page+1} translations`, err)
@@ -148,8 +174,9 @@ export class Reader extends Component<Props, State> {
     }
 
     async markPageRead(page: number) {
-        const currentVolume = globalState.user?.currentVolume
-        if (!currentVolume) return
+        const user = globalState.user
+        const currentVolume = user?.currentVolume
+        if (!user || !currentVolume) return
         if (currentVolume.currentPage !== page) return
 
         const pageBase = Math.floor(page / 32)
@@ -165,6 +192,12 @@ export class Reader extends Component<Props, State> {
                 path: currentVolume.path,
                 page: page + 1,
             })
+
+            for (const volume of user.volumes) {
+                if (volume.volume.path === currentVolume.path) {
+                    volume.latestPage = currentVolume.currentPage + 1
+                }
+            }
         } catch (err) {
             pushError("Failed to update status", err, { deduplicate: true })
         }
@@ -210,9 +243,11 @@ export class Reader extends Component<Props, State> {
 
     componentDidMount(): void {
         window.addEventListener("keydown", this.onKeyDown)
+        readerInstance = this
     }
 
     componentWillUnmount(): void {
+        readerInstance = null
         window.removeEventListener("keydown", this.onKeyDown)
         this.imageView?.dispose()
     }
@@ -254,7 +289,7 @@ export class Reader extends Component<Props, State> {
     }
 
     onMipLoad = () => {
-        this.imageView.render()
+        this.panZoom?.requestAnimationFrame()
     }
 
     onHighlight = (aabbs: PJ.AABB[]) => {
@@ -406,6 +441,10 @@ export class Reader extends Component<Props, State> {
         this.imageView.setScene(scene)
         this.imageView.render()
 
+        if (this.imageView.hasLoadedRealTexture) {
+            this.state.hasLoadedRealTexture = true
+        }
+
         if (this.imageView.renderRequested) {
             this.imageView.renderRequested = false
             this.panZoom?.requestAnimationFrame()
@@ -413,11 +452,15 @@ export class Reader extends Component<Props, State> {
     }
 
     render() {
-        return <>
+        return <div className={{
+            "reader-top": true,
+            "reader-loading": !this.state.hasLoaded,
+        }}>
+            {/*<ChapterList />*/}
             <BottomBar visible={this.state.bottomBarVisible} />
             <Overlay />
             <div ref={this.parentRef} className="viewer-parent">
             </div>
-        </>
+        </div>
     }
 }

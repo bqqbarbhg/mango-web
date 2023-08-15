@@ -61,9 +61,17 @@ export const MangoContent = V.type("MangoContent", V.object({
         }),
     ])),
     pages: V.array(V.object({
+        atlasX: V.integer,
+        atlasY: V.integer,
+        atlasW: V.integer,
+        atlasH: V.integer,
         width: V.integer,
         height: V.integer,
     })),
+    atlas: V.object({
+        width: V.integer,
+        height: V.integer,
+    }),
 }))
 export type MangoContent = V.ValidatorResult<typeof MangoContent>
 
@@ -71,6 +79,7 @@ export type Volume = {
     sourceUrl: string
     sourceUuid: string
     volume: VolumeInfo
+    latestPage: number | null
 }
 
 export type SourceInfo = { url: string, uuid: string }
@@ -108,13 +117,41 @@ export type RouteRead = { path: "/read/", id: string, source: string | null }
 export type RouteSettings = { path: "/settings/", tab: string | null }
 export type Route = RouteIndex | RouteRegister | RouteSettings | RouteRead
 
+export type Rect = {
+    x: number
+    y: number
+    width: number
+    height: number
+}
+
+export type TransitionEndpoint = {
+    rect: Rect
+    image: string
+    opacity: number
+}
+
+export type Transition = {
+    src: TransitionEndpoint
+    dst: TransitionEndpoint
+    startTime: number
+    duration: number
+    initialized: boolean
+    started: boolean
+    done: boolean
+    onStart?: () => void
+    onEnd?: () => void
+}
+
 export type State = {
     route: Route
     errors: ErrorReport[]
     user: User | null
+    transitionRoute: Route | null
+    transition: Transition | null
+    requestTransitionFromVolume: string | null
 }
 
-export function parseRoute(location: Location): Route {
+export function parseRoute(location: URL | Location): Route {
     const path = location.pathname
     let m
 
@@ -242,6 +279,9 @@ export const globalState = createState<State>({
     route: parseRoute(window.location),
     errors: [],
     user: loadUser(),
+    transitionRoute: null,
+    transition: null,
+    requestTransitionFromVolume: null,
 })
 
 useEffect(() => {

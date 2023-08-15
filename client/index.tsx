@@ -1,5 +1,5 @@
 import { render, useEffect } from "kaiku"
-import { globalState, parseRoute, pushError } from "./state"
+import { Route, globalState, parseRoute, pushError } from "./state"
 import { Index as Listing } from "./components/listing"
 import { Index as Reader } from "./components/reader"
 import { Index as Register } from "./components/register"
@@ -8,6 +8,7 @@ import { Index as Settings } from "./components/settings"
 import { ErrorBar } from "./components/common/error-bar"
 import { setApiToken } from "./utils/api"
 import { AppFrame } from "./components/common/app-frame"
+import { Transition } from "./components/reader/transition"
 
 window.addEventListener("popstate", () => {
     globalState.route = parseRoute(window.location)
@@ -17,8 +18,7 @@ useEffect(() => {
     setApiToken(globalState.user?.token ?? null)
 })
 
-function Router() {
-    const route = globalState.route
+function Router({ route }: { route: Route, key: string }) {
     if (route.path === "/register") {
         return <Register />
     } else if (globalState.user === null) {
@@ -26,18 +26,46 @@ function Router() {
     } else if (route.path === "/") {
         return <AppFrame><Listing /></AppFrame>
     } else if (route.path === "/read/") {
-        return <Reader />
+        return <Reader route={route} />
     } else if (route.path === "/settings/") {
-        return <AppFrame><Settings /></AppFrame>
+        return <AppFrame><Settings route={route} /></AppFrame>
     } else {
         return null
     }
 }
 
 function Top() {
+    let baseRoute: Route | null = null
+    let readRoute: Route | null = null
+
+    const { route, transitionRoute } = globalState
+    if (route) {
+        if (route.path === "/read/") {
+            readRoute = route
+        } else {
+            baseRoute = route
+        }
+    }
+    if (transitionRoute) {
+        if (transitionRoute.path === "/read/") {
+            readRoute = transitionRoute
+        } else {
+            baseRoute = transitionRoute
+        }
+    }
+    const transition = globalState.transition
+
     return <>
         <ErrorBar/>
-        <Router/>
+        <div className="top-div" style={{ display: baseRoute ? "block" : "none" }} >
+            {baseRoute ? <Router route={baseRoute} key={"base"}/> : null }
+        </div>
+        <div className="top-div" style={{ display: readRoute ? "block" : "none" }} >
+            {readRoute ? <Router route={readRoute} key={"read"}/> : null }
+        </div>
+        <div className="top-div" style={{ display: transition ? "block" : "none" }} >
+            {transition ? <Transition /> : null}
+        </div>
     </>
 }
 

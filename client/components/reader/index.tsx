@@ -7,15 +7,11 @@ import { Reader } from "./reader";
 import { sourceGetJson } from "../../utils/source";
 import { validate } from "../../utils/validation";
 
-
-function Loader() {
-    return <h1>...</h1>
-}
-
-export function Index() {
-    const route = globalState.route as RouteRead
+export function Index({ route }: { route: RouteRead }) {
     const state = useState({
+        startedLoad: false,
         pending: true,
+        closed: false,
     })
 
     const path = route.id
@@ -115,9 +111,20 @@ export function Index() {
     }
 
     useEffect(() => {
-        load()
+        if (!state.startedLoad) {
+            state.startedLoad = true
+            load()
+        }
     })
 
-    // @ts-ignore
-    return state.pending ? <Loader /> : <Reader />
+    useEffect(() => {
+        if (globalState.transitionRoute?.path === "/" && globalState.transition?.started) {
+            state.closed = true
+        }
+    })
+
+    return <>
+        {/* @ts-ignore */}
+        {(state.pending || state.closed) ? null : <Reader />}
+    </>
 }

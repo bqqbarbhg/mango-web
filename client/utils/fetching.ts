@@ -1,4 +1,4 @@
-import { Source, SourceIndex, globalState, pushError } from "../state"
+import { Source, SourceIndex, Volume, globalState, pushError } from "../state"
 import { apiCall } from "./api"
 import { validate } from "./validation"
 
@@ -39,6 +39,8 @@ export async function refreshVolumes(): Promise<boolean> {
     if (!user) return false
 
     try {
+        const pUserVolumes = apiCall("GET /volumes", {})
+
         try {
             const sources = await apiCall("GET /sources", {})
             user.sources = sources.sources
@@ -50,15 +52,28 @@ export async function refreshVolumes(): Promise<boolean> {
         const promises = sources.map(source => refreshSource(source))
         const sourceVolumes = await Promise.allSettled(promises)
 
-        const volumes = sourceVolumes.flatMap((p, index) => {
+        const volumes: Volume[] = sourceVolumes.flatMap((p, index) => {
             if (p.status === "rejected") return []
             const source = sources[index]!
             return p.value.map(volume => ({
                 volume,
                 sourceUrl: source.url,
                 sourceUuid: source.uuid,
+                latestPage: null,
             }))
-        })
+        }).filter(v => v.volume.path.includes("Yotsuba"))
+
+        const userVolumes = await pUserVolumes
+        const sourceLatestPage = new Map<string, number>()
+        for (const volume of userVolumes.sources) {
+            if (volume.latestPage) {
+                sourceLatestPage.set(volume.path, volume.latestPage)
+            }
+        }
+
+        for (const volume of volumes) {
+            volume.latestPage = sourceLatestPage.get(volume.volume.path) ?? null
+        }
 
         user.volumes = volumes
         return true

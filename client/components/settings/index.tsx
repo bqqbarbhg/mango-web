@@ -3,8 +3,7 @@ import { Link } from "../common/link"
 import { Sessions } from "./sessions"
 import { Sources } from "./sources"
 
-export function SettingsTab() {
-    const route = globalState.route as RouteSettings
+export function SettingsTab({ route }: { route: RouteSettings }) {
     if (route.tab === "sessions") {
         return <Sessions />
     } else if (route.tab === "sources") {
@@ -14,7 +13,7 @@ export function SettingsTab() {
     }
 }
 
-export function Index() {
+export function Index({ route }: { route: RouteSettings }) {
     return <div>
         <h1>Settings</h1>
         <div>
@@ -22,7 +21,7 @@ export function Index() {
                 <Link href="/settings/sources">Sources</Link>
                 <Link href="/settings/sessions">Sessions</Link>
             </div>
-            <SettingsTab />
+            <SettingsTab route={route} />
         </div>
     </div>
 }

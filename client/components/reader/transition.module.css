@@ -1,0 +1,24 @@
+
+.parent {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.image {
+    position: absolute;
+    visibility: hidden;
+    transform-origin: top left;
+}
+
+.bg {
+    position: absolute;
+    visibility: hidden;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9;
+    background-color: #000;
+}
+

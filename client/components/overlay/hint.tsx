@@ -73,11 +73,11 @@ function Result({ hintSelectionState, result, index }: ResultProps) {
         if (glossPart.length >= maxGloss) {
             const missing = numGloss - glossPart.length
             if (expand && !extraExpand) {
-                glossPart.push(<li className="gloss-more">(tap for {missing} more)</li>)
+                glossPart.push(<li className="gloss-more"><span>(tap for {missing} more)</span></li>)
             }
             break
         }
-        glossPart.push(<li>{gloss}</li>)
+        glossPart.push(<li><span>{gloss}</span></li>)
     }
 
     let kanjiText = ""
@@ -131,10 +131,9 @@ function Result({ hintSelectionState, result, index }: ResultProps) {
             window.queueMicrotask(() => {
                 const element = document.querySelector(".hint-selected")
                 if (element) {
-                    console.log(element)
                     element.scrollIntoView({
                         behavior: "smooth",
-                        block: "nearest",
+                        block: "nearest",   
                     })
                 }
             })
@@ -146,12 +145,12 @@ function Result({ hintSelectionState, result, index }: ResultProps) {
             <ul className="hint-gloss">{glossPart}</ul>
             {conjText ? <div className="hint-conjugation">{conjText}</div> : null}
             {(kanjiText || kanaText) ? <div className="hint-text-container">
-                {kanjiText ? <div>
-                    <span className="hint-label">Writing: </span>
+                {kanjiText ? <div className="hint-write-read">
+                    <span className="hint-label">Writing </span>
                     <span className="hint-text">{kanjiText}</span>
                 </div> : null}
-                {kanaText ? <div>
-                    <span className="hint-label">Reading: </span>
+                {kanaText ? <div className="hint-write-read">
+                    <span className="hint-label">Reading </span>
                     <span className="hint-text">{kanaText}</span>
                 </div> : null}
             </div> : null}

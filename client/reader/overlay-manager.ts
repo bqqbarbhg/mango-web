@@ -412,8 +412,9 @@ export class OverlayManager {
         const minWidth = Math.min(350, fullWidth)
         const maxWidth = 450
 
-        const minHeight = Math.min(300, viewSize.y * 0.8 - 2 * borderPadding)
-        const maxHeight = 500
+        const isTranslation = this.state.hint === null && this.state.translation !== null
+        const minHeight = Math.min(isTranslation ? 200 : 300, viewSize.y * 0.8 - 2 * borderPadding)
+        const maxHeight = isTranslation ? 200 : 500
 
         const elemSize = {
             x: isPhone ? fullWidth : Math.min(Math.max(viewSize.x * 0.45, minWidth), maxWidth),
@@ -506,7 +507,7 @@ export class OverlayManager {
             this.rootSize.y = elemSize.y
 
             topState.style.width = `${elemSize.x}px`
-            topState.style.height = `${elemSize.y}px`
+            topState.style.maxHeight = `${elemSize.y}px`
         }
 
         if (deltaX*deltaX + deltaY*deltaY > minDelta*minDelta) {

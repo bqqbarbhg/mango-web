@@ -38,6 +38,7 @@ export default class ImageView {
     }
     mipCache: MipCache | null
     renderRequested: boolean = false
+    hasLoadedRealTexture: boolean = false
 
     requestRender() { this.renderRequested = true }
     setMipCache(cache: MipCache) { this.mipCache = cache }
