@@ -40,7 +40,7 @@ function updateTransition() {
     dstElement.style.zIndex = "11"
     dstElement.style.visibility = "visible"
     dstElement.style.transform = transform
-    dstElement.style.opacity = `${smoothStep(alpha)}`
+    dstElement.style.opacity = `${smoothStep(smoothStep(alpha))}`
 
     if (alpha < 1.0) {
         requestTransition()
@@ -60,7 +60,6 @@ let loadCount = 0
 
 const bumpLoad = () => {
     loadCount++
-    console.error(loadCount)
     if (loadCount === 3) {
         doLoad()
     }

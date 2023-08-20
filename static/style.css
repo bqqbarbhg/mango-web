@@ -6,6 +6,7 @@
 * {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 button {
@@ -110,7 +111,8 @@ body {
 
 .bottom-bar {
     --height: 4rem;
-    padding-bottom: 2rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 
     position: fixed;
     top: calc(100vh - var(--height));
@@ -175,6 +177,10 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+.bottom-bar-button:disabled {
+    color: #888;
 }
 
 /*
@@ -458,11 +464,39 @@ body {
     color: #333;
 }
 
-.page-list {
-    display: flex;
-    flex-wrap: wrap;
-}
-
 .reader-loading {
     visibility: hidden;
+}
+
+.reader-loader {
+    background-color: #000;
+    width: 100%;
+    height: 100%;
+}
+
+.reader-main {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.reader-hidden {
+    visibility: hidden;
+}
+
+.reader-chapters {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    overflow: hidden;
+    transition: transform 0.2s ease-out;
+}
+
+.reader-chapters.hide {
+    transform: translate(0, 100vh);
 }

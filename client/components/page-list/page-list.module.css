@@ -1,4 +1,21 @@
 
-.chapterHead {
-    border: 1px solid red;
+.pageList {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.pageParent {
+    border: 1px solid #ddd;
+    background-color: #000;
+    overflow: hidden;
+    /*box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.15);*/
+}
+
+.pageContent.read {
+    opacity: 70%;
+}
+
+.pageContent.clicked.clicked {
+    opacity: 40%;
 }

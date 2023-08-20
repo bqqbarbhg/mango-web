@@ -7,6 +7,10 @@ import { Reader } from "./reader";
 import { sourceGetJson } from "../../utils/source";
 import { validate } from "../../utils/validation";
 
+function Loader() {
+    return <div className="reader-loader" />
+}
+
 export function Index({ route }: { route: RouteRead }) {
     const state = useState({
         startedLoad: false,
@@ -125,6 +129,8 @@ export function Index({ route }: { route: RouteRead }) {
 
     return <>
         {/* @ts-ignore */}
-        {(state.pending || state.closed) ? null : <Reader />}
+        {(state.pending || state.closed) ? 
+            (!globalState.transitionRoute ? <Loader /> : null)
+            : <Reader />}
     </>
 }

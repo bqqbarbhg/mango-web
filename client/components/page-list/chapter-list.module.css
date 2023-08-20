@@ -1,0 +1,47 @@
+
+.top {
+    height: calc(100% - 4rem);
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding: 1.5rem;
+}
+
+.chapter {
+    margin: 1rem;
+}
+
+.chapterHead {
+    user-select: none;
+    border-bottom: 1px solid #ddd;
+    padding-left: 1rem;
+    display: flex;
+}
+
+.chapterPad {
+    flex-grow: 1;
+}
+
+.title {
+    font-size: 1.25rem;
+}
+
+.titleEn {
+    color: #222;
+}
+.titleJp {
+    color: #222;
+}
+
+.chapterPages {
+    background-color: #eee;
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    transition: height 0.25s ease-out;
+    overflow: hidden;
+}
+
+.pageContainer {
+    padding: 8px;
+}

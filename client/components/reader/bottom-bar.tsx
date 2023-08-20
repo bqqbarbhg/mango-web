@@ -7,18 +7,12 @@ import { readerInstance } from "./reader"
 import Icon from "../common/icon"
 import IconArrowLeft from "@tabler/icons/arrow-left.svg"
 import IconArrowRight from "@tabler/icons/arrow-right.svg"
-import IconArrowBarToLeft from "@tabler/icons/arrow-bar-to-left.svg"
-import IconArrowBarToRight from "@tabler/icons/arrow-bar-to-right.svg"
 import IconBooks from "@tabler/icons/books.svg"
 import IconList from "@tabler/icons/list.svg"
 
-function ChapterListButton() {
-    const state = useState({
-        visible: false,
-    })
-
+function ChapterListButton({ state }: { state: BottomBarState }) {
     const onClick = () => {
-        state.visible = !state.visible
+        state.showChapters = !state.showChapters
     }
 
     return <div className="bottom-bar-button-parent chapter-list-button">
@@ -31,10 +25,12 @@ function ChapterListButton() {
     </div>
 }
 
-function PageButton({ direction }: {
+function PageButton({ direction, disabled }: {
     direction: number,
+    disabled: boolean,
 }) {
     const onClick = () => {
+        if (disabled) return
         if (direction < 0) {
             readerInstance?.moveToPreviousPage()
         } else {
@@ -44,38 +40,23 @@ function PageButton({ direction }: {
 
     let icon = ""
     switch (direction) {
-        case -2: icon = IconArrowBarToLeft; break;
+        // case -2: icon = IconArrowBarToLeft; break;
         case -1: icon = IconArrowLeft; break;
         case  1: icon = IconArrowRight; break;
-        case  2: icon = IconArrowBarToRight; break;
+        // case  2: icon = IconArrowBarToRight; break;
     }
 
-    // TODO:
-    // Redesign with https://tabler-icons.io/
-    // Use both text and icon if not on mobile!
-
-    /*
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-bar-to-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-        <path d="M14 12l-10 0"></path>
-        <path d="M14 12l-4 4"></path>
-        <path d="M14 12l-4 -4"></path>
-        <path d="M20 4l0 16"></path>
-    </svg>
-*/
-
-    return <button onClick={onClick} className="bottom-bar-button">
+    return <button onClick={onClick} className="bottom-bar-button" disabled={disabled}>
         <Icon svg={icon} />
     </button>
 }
 
-function BottomBarContent() {
+function BottomBarContent({ state }: { state: BottomBarState }) {
     const currentVolume = globalState.user?.currentVolume
     if (!currentVolume) return null
 
     const onClickHome = (e: MouseEvent) => {
-        globalState.transitionRoute = { path: "/" }
-        globalState.requestTransitionFromVolume = currentVolume.path
+        readerInstance?.requestQuit()
 
         e.preventDefault()
         return true
@@ -92,21 +73,23 @@ function BottomBarContent() {
             </Link>
         </div>
         <div className="bottom-bar-space" />
-        <PageButton direction={-2} />
-        <PageButton direction={-1} />
+        <PageButton direction={-1} disabled={state.showChapters} />
         <div className="bottom-bar-page">
             {currentVolume.currentPage + 1} / {currentVolume.content.pages.length}
         </div>
-        <PageButton direction={1} />
-        <PageButton direction={2} />
+        <PageButton direction={1} disabled={state.showChapters} />
         <div className="bottom-bar-space" />
-        <ChapterListButton />
+        <ChapterListButton state={state} />
         <div className="bottom-bar-edge" />
     </div>
 }
 
+export type BottomBarState = {
+    showChapters: boolean
+}
 type ContainerProps = {
     visible: boolean
+    state: BottomBarState
 }
 export function BottomBar(props: ContainerProps) {
     const fade = useFade(props.visible, { cullDelayMs: 200 })
@@ -116,6 +99,6 @@ export function BottomBar(props: ContainerProps) {
         "hide": fade.hide,
         "cull": fade.cull,
     })}>
-        {fade.cull ? null : <BottomBarContent /> }
+        {fade.cull ? null : <BottomBarContent state={props.state} /> }
     </div>
 }

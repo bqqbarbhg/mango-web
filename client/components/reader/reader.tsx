@@ -4,8 +4,8 @@ import { Viewport } from "../../reader/common";
 import ImageView, { ImageViewHighlight, ImageViewScene } from "../../reader/image-view";
 import ImageViewWebGL from "../../reader/image-view-webgl";
 // import ImageViewCanvas from "../../reader/image-view-canvas";
-import { BottomBar } from "./bottom-bar";
-import { globalState, pushError } from "../../state";
+import { BottomBar, BottomBarState } from "./bottom-bar";
+import { globalState, pushError, transitionTo } from "../../state";
 import { CancelError, CancelToken, fetchXHR } from "../../utils/fetch-xhr";
 import { parseKtx, ktxJson } from "../../utils/ktx";
 import { MipCache } from "../../reader/mip-cache";
@@ -16,7 +16,8 @@ import * as V from "../../utils/validation"
 import * as PJ from "../../reader/page-json"
 import { immutable } from "kaiku"
 import { apiCall } from "../../utils/api";
-import { ChapterList } from "../page-list/page-list";
+import { ChapterList } from "../page-list/chapter-list";
+import { FadeState, useFade } from "../../utils/fade";
 
 type Props = { }
 type State = {
@@ -25,6 +26,7 @@ type State = {
     hasLoaded: boolean
     ready: boolean
     closed: boolean
+    bottomBar: BottomBarState
 }
 
 export let readerInstance: Reader | null = null
@@ -53,15 +55,20 @@ export class Reader extends Component<Props, State> {
     highlights: ImageViewHighlight[] = []
     pageJsonTimeout: number | null = null
     pageReadTimeout: number | null = null
+    chapterFade: FadeState
 
     constructor(props: Props) {
         super(props)
+
         this.state = createState({
             bottomBarVisible: false,
             hasLoadedRealTexture: false,
             hasLoaded: false,
             ready: false,
             closed: false,
+            bottomBar: {
+                showChapters: false,
+            },
         })
 
         this.image = new Image()
@@ -69,6 +76,8 @@ export class Reader extends Component<Props, State> {
 
         this.overlayManager = new OverlayManager(globalState.user!.overlay!)
         this.overlayManager.highlightCallback = this.onHighlight
+
+        this.chapterFade = useFade(false)
 
         useEffect(() => {
             if (this.initialized) return
@@ -133,14 +142,23 @@ export class Reader extends Component<Props, State> {
             const currentVolume = globalState.user?.currentVolume
             if (!currentVolume) return
 
-            const transition = globalState.transition
-            if (transition) {
-                if (transition.done && this.state.hasLoadedRealTexture && this.state.ready) {
-                    globalState.transition = null
-                    globalState.route = globalState.transitionRoute!
-                    globalState.transitionRoute = null
+            if (!this.state.hasLoaded) {
+                const transition = globalState.transition
+                if ((!transition || transition.done) && this.state.hasLoadedRealTexture && this.state.ready) {
+                    if (transition) {
+                        globalState.transition = null
+                        globalState.route = globalState.transitionRoute!
+                        globalState.transitionRoute = null
+                    }
                     this.state.hasLoaded = true
                 }
+            }
+        })
+
+        useEffect(() => {
+            const { state } = this
+            if (state.bottomBar.showChapters && !state.bottomBarVisible) {
+                state.bottomBarVisible = true
             }
         })
     }
@@ -285,6 +303,30 @@ export class Reader extends Component<Props, State> {
             return true
         } else {
             return false
+        }
+    }
+
+    hideChapterList() {
+        this.state.bottomBar.showChapters = false
+        this.state.bottomBarVisible = false
+    }
+
+    requestQuit() {
+        const currentVolume = globalState.user?.currentVolume
+        const panZoom = this.panZoom
+        if (!currentVolume || !panZoom) return
+        const page = currentVolume.content.pages[currentVolume.currentPage]
+        if (!page) return
+
+        transitionTo("/")
+        globalState.transitionRequest = {
+            volumePath: currentVolume.path,
+            srcRect: {
+                x: panZoom.viewport.x,
+                y: panZoom.viewport.y,
+                width: panZoom.viewport.scale * page.width,
+                height: panZoom.viewport.scale * page.height,
+            }
         }
     }
 
@@ -452,15 +494,30 @@ export class Reader extends Component<Props, State> {
     }
 
     render() {
+        const { state, chapterFade } = this
+
+        chapterFade.requestShow = state.bottomBar.showChapters
+
         return <div className={{
             "reader-top": true,
-            "reader-loading": !this.state.hasLoaded,
+            "reader-loading": !state.hasLoaded && globalState.transitionRoute,
         }}>
-            {/*<ChapterList />*/}
-            <BottomBar visible={this.state.bottomBarVisible} />
-            <Overlay />
-            <div ref={this.parentRef} className="viewer-parent">
+            <BottomBar visible={state.bottomBarVisible} state={state.bottomBar} />
+            <div className={{
+                "reader-main": true,
+                "reader-hidden": false,
+            }}>
+                <Overlay />
+                <div ref={this.parentRef} className="viewer-parent">
+                </div>
             </div>
+            {!chapterFade.cull ?
+                <div className={{
+                    "reader-chapters": true,
+                    "hide": chapterFade.hide,
+                }}>
+                    <ChapterList />
+                </div> : null}
         </div>
     }
 }

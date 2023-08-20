@@ -18,7 +18,7 @@ useEffect(() => {
     setApiToken(globalState.user?.token ?? null)
 })
 
-function Router({ route }: { route: Route, key: string }) {
+function Router({ route, key }: { route: Route, key: string }) {
     if (route.path === "/register") {
         return <Register />
     } else if (globalState.user === null) {

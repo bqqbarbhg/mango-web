@@ -1,8 +1,9 @@
 import { useEffect, useState } from "kaiku";
 
-type FadeState = {
+export type FadeState = {
     hide: boolean
     cull: boolean
+    requestShow: boolean
 }
 
 export function useFade(show: boolean, init?: { cullDelayMs?: number }): FadeState {

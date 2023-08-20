@@ -142,13 +142,18 @@ export type Transition = {
     onEnd?: () => void
 }
 
+export type TransitionRequest = {
+    volumePath: string
+    srcRect: Rect
+}
+
 export type State = {
     route: Route
     errors: ErrorReport[]
     user: User | null
     transitionRoute: Route | null
     transition: Transition | null
-    requestTransitionFromVolume: string | null
+    transitionRequest: TransitionRequest | null
 }
 
 export function parseRoute(location: URL | Location): Route {
@@ -275,13 +280,19 @@ export function navigateTo(path: string) {
     globalState.route = parseRoute(window.location)
 }
 
+export function transitionTo(path: string) {
+    clearErrors()
+    window.history.pushState(null, "", path)
+    globalState.transitionRoute = parseRoute(window.location)
+}
+
 export const globalState = createState<State>({
     route: parseRoute(window.location),
     errors: [],
     user: loadUser(),
     transitionRoute: null,
     transition: null,
-    requestTransitionFromVolume: null,
+    transitionRequest: null,
 })
 
 useEffect(() => {

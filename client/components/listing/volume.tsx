@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "kaiku"
-import { Volume, globalState, navigateTo, parseRoute } from "../../state"
+import { Volume, globalState, navigateTo, parseRoute, transitionTo } from "../../state"
 import { Link } from "../common/link"
-
-let instanceIndex = 0
 
 type Props = {
     volume: Volume
@@ -23,7 +21,7 @@ export function Volume(props: Props) {
     const onClick = (e: MouseEvent) => {
         if (imgRef.current) {
             const rect = imgRef.current.getBoundingClientRect()
-            globalState.transitionRoute = parseRoute(new URL(href, "https://dummy"))
+            transitionTo(href)
 
             const windowWidth = window.innerWidth
             const windowHeight = window.innerHeight
@@ -76,12 +74,11 @@ export function Volume(props: Props) {
         return true
     }
 
-    const index = ++instanceIndex
-
     useEffect(() => {
-        if (globalState.requestTransitionFromVolume && imgRef.current) {
-            if (globalState.requestTransitionFromVolume === path) {
-                globalState.requestTransitionFromVolume = null
+        const { transitionRequest } = globalState
+        if (transitionRequest && imgRef.current) {
+            if (transitionRequest.volumePath === path) {
+                globalState.transitionRequest = null
 
                 state.hide = true
                 window.setTimeout(() => {
@@ -93,30 +90,9 @@ export function Volume(props: Props) {
                         height: img.offsetHeight,
                     }
 
-                    const windowWidth = window.innerWidth
-                    const windowHeight = window.innerHeight
-                    const windowAspect = windowWidth / windowHeight
-                    const imageAspect = rect.width / rect.height
-                    let dstRect = null
-                    if (imageAspect < windowAspect) {
-                        dstRect = {
-                            x: windowWidth / 2 - windowHeight * imageAspect / 2,
-                            y: 0,
-                            width: windowHeight * imageAspect,
-                            height: windowHeight,
-                        }
-                    } else {
-                        dstRect = {
-                            x: 0,
-                            y: windowHeight / 2 -  windowWidth / imageAspect / 2,
-                            width: windowWidth,
-                            height: windowWidth / imageAspect,
-                        }
-                    }
-
                     globalState.transition = {
                         src: {
-                            rect: dstRect,
+                            rect: transitionRequest.srcRect,
                             image: imgDst,
                             opacity: 1.0,
                         },
@@ -149,7 +125,7 @@ export function Volume(props: Props) {
 
     return <div style={{ visibility: state.hide ? "hidden" : "visible" }}>
         <Link onClick={onClick} href={href}>
-            <img ref={imgRef} src={imgSrc} />
+            <img ref={imgRef} src={imgSrc} style={{width:"200px", height:"300px"}} />
         </Link>
         <h3>{info.title.en}</h3>
         {info.title.jp ? <h4>{info.title.jp}</h4> : null}
