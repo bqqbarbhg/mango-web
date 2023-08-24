@@ -121,7 +121,66 @@ const apiRoutes = {
         }),
     },
 
-
+    // -- flashcards --
+    "POST /flashcards": {
+        req: t.type({
+            word: t.string,
+            example: t.string,
+            data: t.UnknownRecord,
+        }),
+        res: t.type({
+            uuid: t.string,
+        }),
+    },
+    "GET /flashcards": {
+        req: t.type({ }),
+        res: t.type({
+            results: t.array(t.type({
+                word: t.string,
+                uuid: t.string,
+                example: t.string,
+                addedTime: t.number,
+                answerTime: t.number,
+                answerHistory: t.number,
+                answersTotal: t.number,
+                answersCorrect: t.number,
+            })),
+        }),
+    },
+    "GET /flashcards/:uuid": {
+        req: t.type({
+            uuid: t.string,
+        }),
+        res: t.type({
+            word: t.string,
+            uuid: t.string,
+            example: t.string,
+            addedTime: t.number,
+            answerHistory: t.number,
+            answersTotal: t.number,
+            answersCorrect: t.number,
+            answerTime: t.number,
+            info: t.any,
+        }),
+    },
+    "POST /flashcards/:uuid/answer": {
+        req: t.type({
+            uuid: t.string,
+            correct: t.boolean,
+        }),
+        res: t.type({
+            answerHistory: t.number,
+            answersTotal: t.number,
+            answersCorrect: t.number,
+            answerTime: t.number,
+        }),
+    },
+    "DELETE /flashcards/:uuid": {
+        req: t.type({
+            uuid: t.string,
+        }),
+        res: t.type({ }),
+    },
 
 } as const
 

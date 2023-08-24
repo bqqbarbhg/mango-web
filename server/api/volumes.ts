@@ -1,10 +1,10 @@
 import { apiRouteAuth } from "../utils/api"
 import * as t from "io-ts"
 import sql from "sql-template-strings"
-import { selectAll } from "../utils/database"
+import { db } from "../utils/database"
 
 apiRouteAuth("GET /volumes", async (req, user) => {
-    const sources = await selectAll(t.type({
+    const sources = await db.selectAll(t.type({
         path: t.string,
         latestPage: t.union([t.number, t.null]),
     }), sql`

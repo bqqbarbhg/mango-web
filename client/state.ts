@@ -1,4 +1,4 @@
-import { createState, useEffect } from "kaiku"
+import { createState, immutable, useEffect } from "kaiku"
 import * as V from "./utils/validation"
 import { setApiToken } from "./utils/api"
 import type { OverlayState } from "./reader/overlay-manager"
@@ -93,6 +93,16 @@ export type CurrentVolume = {
     readPages: number[]
 }
 
+export type Flashcard = {
+    word: string
+    example: string
+    uuid: string
+    answerTime: number
+    answerHistory: number
+    answersTotal: number
+    answersCorrect: number
+}
+
 export type User = {
     name: string
     token: string
@@ -100,6 +110,8 @@ export type User = {
     volumes: Volume[]
     currentVolume: CurrentVolume | null
     overlay: OverlayState | null
+    flashcards: Flashcard[]
+    flashcardLevel: Map<string, number>
 }
 
 export type ErrorReport = {
@@ -115,7 +127,8 @@ export type RouteIndex = { path: "/" }
 export type RouteRegister = { path: "/register" }
 export type RouteRead = { path: "/read/", id: string, source: string | null }
 export type RouteSettings = { path: "/settings/", tab: string | null }
-export type Route = RouteIndex | RouteRegister | RouteSettings | RouteRead
+export type RouteFlashcards = { path: "/flashcards/" }
+export type Route = RouteIndex | RouteRegister | RouteSettings | RouteRead | RouteFlashcards
 
 export type Rect = {
     x: number
@@ -147,13 +160,44 @@ export type TransitionRequest = {
     srcRect: Rect
 }
 
+export type ModalOption = {
+    key: string
+    text: string
+    icon?: string
+}
+
+export type ModalPosition =
+    | "auto"
+    | "top-left"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-right"
+
+export type ModalOptions = {
+    options: ModalOption[]
+    targetElement?: HTMLElement
+    targetPosition?: ModalPosition
+    allowCancel?: boolean
+}
+
+export type Modal = {
+    options: ModalOption[]
+    targetRect: Rect | null
+    targetPosition: ModalPosition
+    allowCancel: boolean
+    resolve: (value: string) => any
+    reject: (error: any) => any
+}
+
 export type State = {
     route: Route
     errors: ErrorReport[]
     user: User | null
+    modal: Modal | null
     transitionRoute: Route | null
     transition: Transition | null
     transitionRequest: TransitionRequest | null
+    mobile: boolean
 }
 
 export function parseRoute(location: URL | Location): Route {
@@ -176,6 +220,9 @@ export function parseRoute(location: URL | Location): Route {
 
     m = path.match(/^\/settings\/(\w+)$/)
     if (m) return { path: "/settings/", tab: m[1]! }
+
+    m = path.match(/^\/flashcards\/?$/)
+    if (m) return { path: "/flashcards/" }
 
     return { path: "/" }
 }
@@ -235,6 +282,39 @@ export function closeError(id: string) {
     }
 }
 
+export function showModal(options: ModalOptions): Promise<string> {
+    const existing = globalState.modal
+    if (existing) {
+        if (existing.allowCancel) {
+            existing.resolve("cancel")
+        } else {
+            existing.reject(new Error("Modal interrupted"))
+        }
+    }
+
+    let targetRect: Rect | null = null
+    if (options.targetElement) {
+        const bounds = options.targetElement.getBoundingClientRect()
+        targetRect = {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+        }
+    }
+
+    return new Promise((resolve, reject) => {
+        globalState.modal = immutable({
+            options: options.options,
+            targetPosition: options.targetPosition ?? "auto",
+            allowCancel: options.allowCancel ?? false,
+            targetRect,
+            resolve,
+            reject,
+        })
+    })
+}
+
 export function clearErrors() {
     globalState.errors = []
 }
@@ -267,6 +347,8 @@ function loadUser(): User | null {
             volumes: [],
             currentVolume: null,
             overlay: null,
+            flashcards: [],
+            flashcardLevel: new Map(),
         }
     } catch (err) {
         console.log(err)
@@ -290,9 +372,11 @@ export const globalState = createState<State>({
     route: parseRoute(window.location),
     errors: [],
     user: loadUser(),
+    modal: null,
     transitionRoute: null,
     transition: null,
     transitionRequest: null,
+    mobile: false,
 })
 
 useEffect(() => {

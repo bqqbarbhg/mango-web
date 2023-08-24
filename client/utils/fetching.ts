@@ -34,6 +34,23 @@ async function refreshSource(source: Source) {
     }
 }
 
+export async function refreshFlashcards(): Promise<boolean> {
+    const user = globalState.user
+    if (!user) return false
+    try {
+        const result = await apiCall("GET /flashcards", {})
+        console.log(result)
+        user.flashcards = result.results
+        user.flashcardLevel = new Map(result.results.map(f => [f.word, 1]))
+        return true
+    } catch (err) {
+        pushError("Failed to update flashcards", err, {
+            deduplicate: true,
+        })
+        throw err
+    }
+}
+
 export async function refreshVolumes(): Promise<boolean> {
     const user = globalState.user
     if (!user) return false

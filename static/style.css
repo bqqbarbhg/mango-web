@@ -1,6 +1,7 @@
 
 :root {
     --hint-margin: 8px;
+    --app-height: 100%;
 }
 
 * {
@@ -19,6 +20,7 @@ button {
   line-height: inherit;
   padding: 0;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 body {
@@ -29,12 +31,14 @@ body {
 .app-root {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: var(--app-height);
 }
 
 .app-main {
+    display: flex;
+    flex-direction: column;
     flex-grow: 1;
-    overflow-y: scroll;
+    overflow: hidden;
 }
 
 .top-div {
@@ -42,8 +46,76 @@ body {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: var(--app-height);
     display: none;
+}
+
+.main-nav {
+    display: flex;
+    background-color: #222;
+    flex-shrink: 0;
+}
+
+.main-nav-mobile {
+    justify-content: space-around;
+}
+
+.nav-button {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #bbb;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    margin-left: 12px;
+    margin-right: 12px;
+    border-radius: 8px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.nav-button.nav-button-mobile {
+    flex-direction: column;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    padding-left: 24px;
+    padding-right: 24px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.nav-button-selected {
+    color: #eee;
+    background-color: #404040;
+}
+
+.nav-button .icon {
+    stroke-width: 1.5;
+}
+
+.nav-button.nav-button-selected .icon {
+    stroke-width: 2.25;
+}
+
+.nav-label {
+    color: #888;
+    margin-left: 8px;
+    font-size: 15px;
+}
+
+.nav-button-mobile .nav-label {
+    font-size: 12px;
+    margin-left: 0;
+}
+
+.nav-button-selected .nav-label {
+    color: #eee;
 }
 
 /* Errors */
@@ -55,6 +127,7 @@ body {
     transform: translateX(-50%);
     max-width: 40em;
     width: 90%;
+    z-index: 5;
 }
 
 .error-list {
@@ -96,6 +169,57 @@ body {
 
 .error-cause {
     font-weight: bold;
+}
+
+/* Modals */
+
+.modal-parent {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 4;
+    background-color: rgba(0,0,0,0);
+    transition: background-color 0.2s ease;
+}
+
+.modal-open {
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.3);
+}
+
+.modal-highlight {
+    position: absolute;
+    background-color: rgba(255,255,255,0.25);
+    border-radius: 8px;
+}
+
+.modal {
+    position: absolute;
+    background-color: white;
+    width: max-content;
+    overflow: hidden;
+    border-radius: 8px;
+    transition:
+        opacity 0.25s cubic-bezier(.23,1.39,.68,1.02),
+        transform 0.25s cubic-bezier(.23,1.39,.68,1.02);
+}
+
+.modal-option {
+    padding: 0.5rem 1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    align-items: center;
+    background-color: white;
+}
+
+.modal-option .icon {
+    margin-right: 0.2rem;
+}
+
+.modal-option:hover {
+    background-color: #eee;
 }
 
 #main-parent {
@@ -166,6 +290,7 @@ body {
 .bottom-bar-button-parent {
     flex-shrink: 0;
     user-select: none;
+    -webkit-user-select: none;
 }
 
 .bottom-bar-button {
@@ -234,6 +359,7 @@ body {
 
 .bottom-bar-page {
     user-select: none;
+    -webkit-user-select: none;
     flex-shrink: 0;
     margin-left: 16px;
     margin-right: 16px;
@@ -338,6 +464,38 @@ body {
     padding-bottom: 20px;
 }
 
+.hint-add {
+    background-color: #ede6db;
+    color: #888;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hint-add.hint-add-active {
+    background-color: #b9dfb8;
+    color: #648568;
+}
+
+.hint-selected .hint-add {
+    background-color: #dbd1c0;
+    color: #808080;
+}
+
+.hint-selected .hint-add.hint-add-active {
+    background-color: #aad3a9;
+    color: #59815e;
+}
+
+.hint-add .icon {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5px;
+}
+
 .hint-content {
     margin-left: 16px;
     margin-right: 16px;
@@ -352,9 +510,17 @@ body {
     margin-bottom: var(--hint-margin);
 }
 
+.hint-title-parent {
+    display: flex;
+}
+
 .hint-title {
     font-size: 1.5em;
     margin-bottom: var(--hint-margin);
+}
+
+.hint-title-space {
+    flex-grow: 1;
 }
 
 .hint-gloss {
@@ -456,6 +622,7 @@ body {
 .translation-label {
     color: #777;
     user-select: none;
+    -webkit-user-select: none;
 }
 
 .translation-text {
@@ -499,4 +666,110 @@ body {
 
 .reader-chapters.hide {
     transform: translate(0, 100vh);
+}
+
+.flashcard-test {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.flashcard-card {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0.5rem;
+    background-color: rgb(255, 251, 244);
+    border-radius: 8px;
+    box-shadow:
+        0px 8px 20px rgba(0, 0, 0, 0.08),
+        0px 0px 0px 1px rgba(0, 0, 0, 0.15);
+    z-index: 2;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: min(100vw - 3rem, 30rem);
+    padding: 20px;
+    max-height: calc(100% - 2rem);
+}
+
+.flashcard-card-parent {
+    flex-basis: 36rem;
+    min-height: 12rem;
+    flex-shrink: 1;
+    padding-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.flashcard-space {
+    height: 16rem;
+}
+
+.flashcard-title {
+    font-size: 1.5rem;
+}
+
+.flashcard-example {
+    font-size: 1.5rem;
+    margin: 0 auto;
+}
+
+.flashcard-content {
+    margin-top: 0.5rem;
+}
+
+.flashcard-buttons {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.flashcard-button {
+    padding: 16px;
+    border-radius: 12px;
+    background-color: #ddd;
+    width: 8rem;
+    font-size: 1.25rem;
+    color: #444;
+    margin-bottom: 4rem;
+}
+
+.mobile .flashcard-button {
+    margin-bottom: 1rem;
+}
+
+.flashcard-button.wrong {
+    background-color: #daa;
+    color: #622;
+}
+
+.flashcard-button.right {
+    background-color: #ada;
+    color: #262;
+}
+
+.flashcard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.flashcard-filler {
+    width: 24px;
+    height: 24px;
+}
+
+.flashcard-list-button {
+    width: 24px;
+    height: 24px;
+    color: #333;
+}
+
+.flashcard-left {
+    text-align: center;
+    color: #555;
 }

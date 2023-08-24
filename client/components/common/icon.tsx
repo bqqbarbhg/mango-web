@@ -1,14 +1,19 @@
 import { useEffect, useRef } from "kaiku"
 
-export default function Icon({ svg }: { svg: string }) {
+export default function Icon(props: {
+    svg: string
+    className?: string
+}) {
     const ref = useRef<HTMLElement>()
 
     useEffect(() => {
         if (ref.current) {
-            ref.current.innerHTML = svg
+            ref.current.innerHTML = props.svg
         }
     })
 
-    return <div ref={ref} />
+    const className = props.className
+        ? ["icon", props.className] : "icon"
+    return <div className={className} ref={ref} />
 }
 

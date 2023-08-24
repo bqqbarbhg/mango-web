@@ -4,7 +4,7 @@
   "description": "Mango web frontend",
   "main": "index.js",
   "scripts": {
-    "watch": "esbuild --watch ./client/index.tsx --bundle --loader:.glsl=text --loader:.svg=text --loader:.css=local-css --outdir=build",
+    "watch": "esbuild --watch ./client/index.tsx --bundle --loader:.glsl=text --loader:.svg=text --loader:.module.css=local-css --outdir=build",
     "build": "esbuild ./client/index.tsx --bundle --define:process.env.NODE_ENV=\\\"production\\\" --minify --loader:.glsl=text --loader:.svg=text --loader:.module.css=local-css --metafile=build/meta.json --outdir=build",
     "serve": "ts-node-dev --respawn --transpile-only ./server/index.ts",
     "typecheck": "npm run typecheck --workspaces"

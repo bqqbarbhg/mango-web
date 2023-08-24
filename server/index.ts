@@ -9,11 +9,13 @@ async function main() {
     const { values: args } = parseArgs({
         options: {
             db: { type: "string" },
+            forceMigration: { type: "boolean" },
         }
     })
 
     setupDatabase({
         databasePath: args.db,
+        forceMigration: args.forceMigration,
     })
 
     const app = express()
@@ -32,6 +34,7 @@ async function main() {
 
     const htmlPaths = [
         "/", "/read/*", "/register", "/settings", "/settings/*",
+        "/flashcards", "/flashcards/",
     ]
     for (const path of htmlPaths) {
         app.use(path, express.static("static/index.html"))

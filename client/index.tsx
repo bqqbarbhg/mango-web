@@ -5,7 +5,9 @@ import { Index as Reader } from "./components/reader"
 import { Index as Register } from "./components/register"
 import { Index as Login } from "./components/login"
 import { Index as Settings } from "./components/settings"
+import { Index as Flashcards } from "./components/flashcards"
 import { ErrorBar } from "./components/common/error-bar"
+import { Modal } from "./components/common/modal"
 import { setApiToken } from "./utils/api"
 import { AppFrame } from "./components/common/app-frame"
 import { Transition } from "./components/reader/transition"
@@ -29,7 +31,8 @@ function Router({ route, key }: { route: Route, key: string }) {
         return <Reader route={route} />
     } else if (route.path === "/settings/") {
         return <AppFrame><Settings route={route} /></AppFrame>
-    } else {
+    } else if (route.path === "/flashcards/") {
+        return <AppFrame><Flashcards route={route} /></AppFrame>    } else {
         return null
     }
 }
@@ -57,6 +60,7 @@ function Top() {
 
     return <>
         <ErrorBar/>
+        <Modal/>
         <div className="top-div" style={{ display: baseRoute ? "block" : "none" }} >
             {baseRoute ? <Router route={baseRoute} key={"base"}/> : null }
         </div>
@@ -74,6 +78,20 @@ window.addEventListener("error", (e) => {
         pushError("Uncaught error", e.error)
     }
 })
+
+const onResize = () => {
+    const mobile = window.innerWidth <= 500
+
+    globalState.mobile = mobile
+
+    const rootStyle = document.documentElement.style
+    rootStyle.setProperty("--app-height", `${window.innerHeight}px`)
+
+    document.body.classList.toggle("mobile", mobile)
+    document.body.classList.toggle("desktop", !mobile)
+}
+window.addEventListener("resize", onResize)
+onResize()
 
 const kaikuRoot = document.getElementById("kaiku-root")
 if (!kaikuRoot) throw new Error("could not find root")

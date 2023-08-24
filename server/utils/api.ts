@@ -2,7 +2,7 @@ import apiRoutes from "../../common/api-routes"
 import type { TypeOf } from "io-ts"
 import { RequestHandler, Router, Request } from "express"
 import { verifyJwt } from "./auth"
-import { selectOptional } from "./database"
+import { db } from "./database"
 import sql from "sql-template-strings"
 import * as t from "io-ts"
 
@@ -134,7 +134,7 @@ export function apiRouteAuth<Route extends keyof ApiRoutes>(
 
         const payload = verifyJwt(token)
 
-        const verify = await selectOptional(t.type({ id: t.number }), sql`
+        const verify = await db.selectOptional(t.type({ id: t.number }), sql`
             SELECT id FROM Sessions WHERE id=${payload.sessionId}
         `)
         if (!verify || payload.sessionId !== verify.id) {

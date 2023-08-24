@@ -128,7 +128,7 @@ export function Volume(props: Props) {
             <img ref={imgRef} src={imgSrc} style={{width:"200px", height:"300px"}} />
         </Link>
         <h3>{info.title.en}</h3>
-        {info.title.jp ? <h4>{info.title.jp}</h4> : null}
+        {info.title.jp ? <h4 lang="ja-jp">{info.title.jp}</h4> : null}
         {info.volume !== null ? <h4>{info.volume}</h4> : null}
     </div>
 }

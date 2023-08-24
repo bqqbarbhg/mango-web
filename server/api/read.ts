@@ -1,7 +1,7 @@
 import { ApiUser, apiRouteAuth } from "../utils/api"
 import * as t from "io-ts"
 import sql from "sql-template-strings"
-import { run, select, selectAll, selectOptional } from "../utils/database"
+import { db } from "../utils/database"
 import { v4 as uuidv4 } from "uuid"
 import apiRoutes from "../../common/api-routes"
 
@@ -9,7 +9,7 @@ type PostReq = t.TypeOf<typeof apiRoutes["POST /read/:*path"]["req"]>;
 async function tryUpdate(req: PostReq, user: ApiUser): Promise<boolean> {
     let sourceId: number | null = null
     if (req.sourceUuid) {
-        const result = await selectOptional(t.type({ id: t.number }), sql`
+        const result = await db.selectOptional(t.type({ id: t.number }), sql`
             SELECT id FROM Sources WHERE uuid=${req.sourceUuid}
         `)
         if (result !== null) {
@@ -18,7 +18,7 @@ async function tryUpdate(req: PostReq, user: ApiUser): Promise<boolean> {
     }
 
     if (sourceId !== null) {
-        const result = await run(sql`
+        const result = await db.run(sql`
             UPDATE VolumeState SET
                 latestPage = ${req.page},
                 latestSessionId = ${user.userId},
@@ -27,7 +27,7 @@ async function tryUpdate(req: PostReq, user: ApiUser): Promise<boolean> {
         `)
         return (result.changes ?? 0) > 0
     } else {
-        const result = await run(sql`
+        const result = await db.run(sql`
             UPDATE VolumeState SET
                 latestPage = ${req.page},
                 latestSessionId = ${user.userId}
@@ -40,7 +40,7 @@ async function tryUpdate(req: PostReq, user: ApiUser): Promise<boolean> {
 apiRouteAuth("POST /read/:*path", async (req, user) => {
     let result = await tryUpdate(req, user)
     if (!result) {
-        await run(sql`
+        await db.run(sql`
             INSERT INTO VolumeState (userId, path)
             VALUES (${user.userId}, ${req.path})
         `)
@@ -55,13 +55,13 @@ apiRouteAuth("POST /read/:*path", async (req, user) => {
         const pageBase = Math.floor(zeroPage / 32)
         const pageBit = 1 << (zeroPage % 32)
 
-        const { id: volumeId } = await select(t.type({ id: t.number }), sql`
+        const { id: volumeId } = await db.select(t.type({ id: t.number }), sql`
             SELECT id
             FROM VolumeState
             WHERE userId=${user.userId} AND path=${req.path}
         `)
 
-        await run(sql`
+        await db.run(sql`
             INSERT INTO ReadPages(volumeId, pageBase, pageBits)
                 VALUES (${volumeId}, ${pageBase}, ${pageBit})
             ON CONFLICT(volumeId, pageBase)
@@ -73,7 +73,7 @@ apiRouteAuth("POST /read/:*path", async (req, user) => {
 })
 
 apiRouteAuth("GET /read/:*path", async (req, user) => {
-    const row = await selectOptional(t.type({
+    const row = await db.selectOptional(t.type({
         sourceUuid: t.union([t.string, t.null]),
         sourceUrl: t.union([t.string, t.null]),
         page: t.union([t.number, t.null]),
@@ -92,7 +92,7 @@ apiRouteAuth("GET /read/:*path", async (req, user) => {
 
     const readPages = []
     if (row.volumeId !== null) {
-        const pageRows = await selectAll(t.type({
+        const pageRows = await db.selectAll(t.type({
             pageBase: t.number,
             pageBits: t.number,
         }), sql`

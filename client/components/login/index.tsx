@@ -26,6 +26,8 @@ function LoginForm() {
                 volumes: [],
                 currentVolume: null,
                 overlay: null,
+                flashcards: [],
+                flashcardLevel: new Map(),
             }
 
             localStorage.setItem("user", JSON.stringify({

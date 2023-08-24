@@ -2,7 +2,7 @@ import { immutable, useState, unwrap, useEffect } from "kaiku";
 import { MangoContent, MangoInfo, RouteRead, globalState, navigateTo, pushError } from "../../state";
 import ImageView from "../../reader/image-view-webgl";
 import { apiCall } from "../../utils/api";
-import { fetchSources, refreshVolumes } from "../../utils/fetching";
+import { fetchSources, refreshFlashcards, refreshVolumes } from "../../utils/fetching";
 import { Reader } from "./reader";
 import { sourceGetJson } from "../../utils/source";
 import { validate } from "../../utils/validation";
@@ -29,6 +29,8 @@ export function Index({ route }: { route: RouteRead }) {
 
         let page = 1
         let readPages: number[] = []
+
+        refreshFlashcards()
 
         try {
             const { result: state } = await apiCall("GET /read/:*path", { path })

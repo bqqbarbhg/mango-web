@@ -1,6 +1,6 @@
 import { UserError, apiRoute, apiRouteAuth } from "../utils/api"
 import bcrypt from "bcrypt"
-import { run, selectOptional, selectAll } from "../utils/database"
+import { db } from "../utils/database"
 import * as t from "io-ts"
 import sql from "sql-template-strings"
 import { signJwt } from "../utils/auth"
@@ -30,7 +30,7 @@ apiRoute("POST /auth/register", constantTime(500, async (req) => {
     if (!req.email.match(/.+@.+/)) throw new UserError("Malformed email address")
 
     try {
-        const result = await run(sql`
+        const result = await db.run(sql`
             INSERT INTO Users (username, email, password)
             VALUES (${req.username}, ${req.email}, ${passwordHash})
         `)
@@ -49,7 +49,7 @@ apiRoute("POST /auth/register", constantTime(500, async (req) => {
 }))
 
 apiRoute("POST /auth/login", constantTime(1000, async (req) => {
-    const user = await selectOptional(t.type({
+    const user = await db.selectOptional(t.type({
         id: t.number,
         password: t.string,
     }), sql`
@@ -62,7 +62,7 @@ apiRoute("POST /auth/login", constantTime(1000, async (req) => {
     if (!ok) throw new UserError("Bad username or password")
 
     const uuid = uuidv4()
-    const result = await run(sql`
+    const result = await db.run(sql`
         INSERT INTO Sessions (userId, device, uuid)
         VALUES (${user.id}, ${req.device}, ${uuid})
     `)
@@ -79,7 +79,7 @@ apiRoute("POST /auth/login", constantTime(1000, async (req) => {
 }))
 
 apiRouteAuth("POST /auth/logout", async (req, user) => {
-    const result = await run(sql`
+    const result = await db.run(sql`
         DELETE FROM Sessions
         WHERE id=${user.sessionId}
     `)
@@ -87,7 +87,7 @@ apiRouteAuth("POST /auth/logout", async (req, user) => {
 })
 
 apiRouteAuth("GET /auth/sessions", async (req, user) => {
-    const sessions = await selectAll(t.type({
+    const sessions = await db.selectAll(t.type({
         uuid: t.string,
         device: t.string,
     }), sql`
@@ -99,7 +99,7 @@ apiRouteAuth("GET /auth/sessions", async (req, user) => {
 })
 
 apiRouteAuth("DELETE /auth/sessions", async (req, user) => {
-    const result = await run(sql`
+    const result = await db.run(sql`
         DELETE FROM Sessions
         WHERE userId=${user.userId}
     `)
@@ -107,7 +107,7 @@ apiRouteAuth("DELETE /auth/sessions", async (req, user) => {
 })
 
 apiRouteAuth("DELETE /auth/sessions/:uuid", async (req, user) => {
-    const result = await run(sql`
+    const result = await db.run(sql`
         DELETE FROM Sessions
         WHERE userId=${user.userId} AND uuid=${req.uuid}
     `)
