@@ -5,9 +5,21 @@ const Session = t.type({
     device: t.string,
 })
 
+const SourceAuth = t.union([
+    t.type({
+        type: t.literal("none"),
+    }),
+    t.type({
+        type: t.literal("basic"),
+        username: t.string,
+        password: t.string,
+    }),
+])
+
 const Source = t.type({
     uuid: t.string,
     url: t.string,
+    auth: SourceAuth,
 })
 
 const apiRoutes = {
@@ -67,6 +79,7 @@ const apiRoutes = {
     "POST /sources": {
         req: t.type({
             url: t.string,
+            auth: SourceAuth,
         }),
         res: t.type({
             ok: t.boolean,
@@ -107,10 +120,7 @@ const apiRoutes = {
             result: t.union([
                 t.type({
                     source: t.union([
-                        t.type({
-                            uuid: t.string,
-                            url: t.string,
-                        }),
+                        Source,
                         t.null,
                     ]),
                     page: t.union([t.number, t.null]),

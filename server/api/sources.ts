@@ -8,19 +8,27 @@ apiRouteAuth("GET /sources", async (req, user) => {
     const sources = await db.selectAll(t.type({
         url: t.string,
         uuid: t.string,
+        auth: t.string,
     }), sql`
-        SELECT url, uuid
+        SELECT url, uuid, auth
         FROM Sources
         WHERE userId=${user.userId}
     `)
-    return { sources }
+
+    return {
+        sources: sources.map(({ url, uuid, auth }) => ({
+            url, uuid,
+            auth: JSON.parse(auth),
+        }))
+    }
 })
 
 apiRouteAuth("POST /sources", async (req, user) => {
     if (req.url === "") throw new UserError("Source URL cannot be empty")
+    const auth = JSON.stringify(req.auth)
     const result = await db.run(sql`
-        INSERT INTO Sources (userId, url, uuid)
-        VALUES (${user.userId}, ${req.url}, ${uuidv4()})
+        INSERT INTO Sources (userId, url, uuid, auth)
+        VALUES (${user.userId}, ${req.url}, ${uuidv4()}, ${auth})
     `)
     return { ok: result.changes !== undefined && result.changes > 0 }
 })

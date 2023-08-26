@@ -33,6 +33,7 @@ export function Index() {
             Refresh
         </button>
         <div>
+            {/*@ts-ignore*/}
             {user.volumes.map(volume => <div key={volume.volume.path}><Volume volume={volume} key={volume.volume.path} /></div>)}
         </div>
     </div>

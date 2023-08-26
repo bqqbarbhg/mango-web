@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "kaiku"
 import { Volume, globalState, navigateTo, parseRoute, transitionTo } from "../../state"
 import { Link } from "../common/link"
+import { sourceGetBlob } from "../../utils/source"
 
 type Props = {
     volume: Volume
@@ -11,11 +12,20 @@ export function Volume(props: Props) {
     const imgRef = useRef<HTMLElement>()
     const state = useState({
         hide: false,
+        imgSrc: "",
     })
 
-    const url = `${volume.sourceUrl}/${path}`
 
-    const href = `/read/${path}?source=${volume.sourceUuid}`
+    useEffect(() => {
+        sourceGetBlob(volume.source, `${path}/cover.jpg`)
+            .then((blob) => {
+                state.imgSrc = URL.createObjectURL(blob)
+            })
+    })
+
+    const url = `${volume.source.url}/${path}`
+
+    const href = `/read/${path}?source=${volume.source.url}`
     const imgSrc = `${url}/cover.jpg`
     const imgDst = volume.latestPage !== null ? `${url}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : imgSrc
     const onClick = (e: MouseEvent) => {
@@ -125,7 +135,7 @@ export function Volume(props: Props) {
 
     return <div style={{ visibility: state.hide ? "hidden" : "visible" }}>
         <Link onClick={onClick} href={href}>
-            <img ref={imgRef} src={imgSrc} style={{width:"200px", height:"300px"}} />
+            <img ref={imgRef} src={state.imgSrc} style={{width:"200px", height:"300px"}} />
         </Link>
         <h3>{info.title.en}</h3>
         {info.title.jp ? <h4 lang="ja-jp">{info.title.jp}</h4> : null}

@@ -1,4 +1,4 @@
-import { MangoContent, SourceInfo, pushError } from "../state"
+import { MangoContent, Source, pushError } from "../state"
 import { sourceGetBuffer, sourceGetJson } from "../utils/source"
 
 type MipData = {
@@ -64,7 +64,7 @@ function parseMipFile(data: DataView): MipData[] {
 }
 
 export class MipCache {
-    source: SourceInfo
+    source: Source
     path: string
     files: MipFile[] = []
     pages: MipPage[] = []
@@ -81,7 +81,7 @@ export class MipCache {
 
     loadCallback: () => void = () => {}
 
-    constructor(source: SourceInfo, path: string, content: MangoContent, format: string) {
+    constructor(source: Source, path: string, content: MangoContent, format: string) {
         this.source = source
         this.path = path
 

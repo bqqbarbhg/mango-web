@@ -1,5 +1,6 @@
 import { Source, SourceIndex, Volume, globalState, pushError } from "../state"
 import { apiCall } from "./api"
+import { sourceGetJson } from "./source"
 import { validate } from "./validation"
 
 export async function fetchSources(): Promise<boolean> {
@@ -19,10 +20,7 @@ export async function fetchSources(): Promise<boolean> {
 
 async function refreshSource(source: Source) {
     try {
-        const url = `${source.url}/index.json`
-        const response = await fetch(url)
-        const json = await response.json()
-
+        const json = await sourceGetJson(source, "index.json")
         const sourceIndex = validate(SourceIndex, json)
 
         return sourceIndex.volumes
@@ -73,9 +71,7 @@ export async function refreshVolumes(): Promise<boolean> {
             if (p.status === "rejected") return []
             const source = sources[index]!
             return p.value.map(volume => ({
-                volume,
-                sourceUrl: source.url,
-                sourceUuid: source.uuid,
+                volume, source,
                 latestPage: null,
             }))
         }).filter(v => v.volume.path.includes("Yotsuba"))

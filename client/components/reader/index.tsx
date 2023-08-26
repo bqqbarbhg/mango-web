@@ -1,5 +1,5 @@
 import { immutable, useState, unwrap, useEffect } from "kaiku";
-import { MangoContent, MangoInfo, RouteRead, globalState, navigateTo, pushError } from "../../state";
+import { MangoContent, MangoInfo, RouteRead, Source, globalState, navigateTo, pushError } from "../../state";
 import ImageView from "../../reader/image-view-webgl";
 import { apiCall } from "../../utils/api";
 import { fetchSources, refreshFlashcards, refreshVolumes } from "../../utils/fetching";
@@ -25,7 +25,7 @@ export function Index({ route }: { route: RouteRead }) {
         if (!user) return
 
         let sourceUuid = route.source
-        let sourceUrl: string | null = null
+        let source: Source | null = null
 
         let page = 1
         let readPages: number[] = []
@@ -46,11 +46,11 @@ export function Index({ route }: { route: RouteRead }) {
                     sourceUuid = state.source.uuid
                 }
                 if (state.source.uuid === sourceUuid) {
-                    sourceUrl = state.source.url
+                    source = state.source
                 }
             }
 
-            if (sourceUrl === null) {
+            if (source === null) {
                 let volume = user.volumes.find(v => v.volume.path === path) ?? null
                 if (!volume) {
                     await refreshVolumes()
@@ -58,8 +58,7 @@ export function Index({ route }: { route: RouteRead }) {
                 }
 
                 if (volume) {
-                    sourceUuid = volume.sourceUuid
-                    sourceUrl = volume.sourceUrl
+                    source = volume.source
                 }
             }
         } catch (err) {
@@ -68,7 +67,7 @@ export function Index({ route }: { route: RouteRead }) {
             return
         }
 
-        if (sourceUrl === null) {
+        if (source === null) {
             navigateTo("/")
             pushError(`Failed to load ${path}`, "Could not find source")
             return
@@ -79,8 +78,6 @@ export function Index({ route }: { route: RouteRead }) {
         } catch (err) {
             pushError("Failed to update status", err, { deduplicate: true })
         }
-
-        const source = { url: sourceUrl, uuid: sourceUrl }
 
         try {
             const pMangoContent = sourceGetJson(source, `${path}/mango-content.json`)
@@ -133,6 +130,7 @@ export function Index({ route }: { route: RouteRead }) {
         {/* @ts-ignore */}
         {(state.pending || state.closed) ? 
             (!globalState.transitionRoute ? <Loader /> : null)
+            /*@ts-ignore*/
             : <Reader />}
     </>
 }

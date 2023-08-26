@@ -3,9 +3,14 @@ import * as V from "./utils/validation"
 import { setApiToken } from "./utils/api"
 import type { OverlayState } from "./reader/overlay-manager"
 
+export type SourceAuth =
+    | { type: "none" }
+    | { type: "basic", username: string, password: string }
+
 export type Source = {
     url: string
     uuid: string
+    auth: SourceAuth
 }
 
 export const LangString = V.type("LangString", V.openObject({
@@ -76,19 +81,16 @@ export const MangoContent = V.type("MangoContent", V.object({
 export type MangoContent = V.ValidatorResult<typeof MangoContent>
 
 export type Volume = {
-    sourceUrl: string
-    sourceUuid: string
+    source: Source
     volume: VolumeInfo
     latestPage: number | null
 }
-
-export type SourceInfo = { url: string, uuid: string }
 
 export type CurrentVolume = {
     path: string
     info: MangoInfo
     content: MangoContent
-    source: SourceInfo
+    source: Source
     currentPage: number
     readPages: number[]
 }

@@ -76,12 +76,14 @@ apiRouteAuth("GET /read/:*path", async (req, user) => {
     const row = await db.selectOptional(t.type({
         sourceUuid: t.union([t.string, t.null]),
         sourceUrl: t.union([t.string, t.null]),
+        sourceAuth: t.union([t.string, t.null]),
         page: t.union([t.number, t.null]),
         volumeId: t.union([t.number, t.null]),
     }), sql`
         SELECT
             Sources.uuid AS sourceUuid,
             Sources.url AS sourceUrl,
+            Sources.auth AS sourceAuth,
             VolumeState.latestPage AS page,
             VolumeState.id AS volumeId
         FROM VolumeState
@@ -109,7 +111,7 @@ apiRouteAuth("GET /read/:*path", async (req, user) => {
         }
     }
 
-    const source = row.sourceUrl && row.sourceUuid
-        ? { url: row.sourceUrl, uuid: row.sourceUuid } : null
+    const source = row.sourceUrl && row.sourceUuid && row.sourceAuth
+        ? { url: row.sourceUrl, uuid: row.sourceUuid, auth: JSON.parse(row.sourceAuth) } : null
     return { result: { source, page: row.page, readPages } }
 })

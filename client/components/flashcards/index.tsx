@@ -16,5 +16,6 @@ export function Index({ route }: { route: RouteFlashcards }) {
         }
     })
 
+    /*@ts-ignore*/
     return <FlashcardTest />
 }
