@@ -1,61 +1,21 @@
 
-.sourceForm {
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
+.sourceName {
+    flex-grow: 1;
+    margin-left: 1rem;
 }
 
-.sourceInputParent {
-    display: flex;
-    align-items: baseline;
-}
-
-.sourceInputParent + .sourceInputParent {
-    margin-top: 0.5rem;
-}
-
-.authParent {
-    margin-top: 0.5rem;
-    padding-left: 0.5rem;
-    border-left: 1px solid #888;
-}
-
-.sourceInput {
-    width: 16rem;
-}
-
-.authParent .sourceInput {
-    width: calc(16rem - 0.5rem);
-}
-
-.input {
-    padding: 4px;
-    height: 32px;
-    font-size: 14px;
-    border-radius: 2px;
-    border: 1px solid #888;
-    background-color: #fff;
-    color: #000;
-}
-
-.sourceInput .input {
-    width: 100%;
-}
-
-.sourceInputLabel {
+.optionsButton {
+    text-align: left;
+    font-size: 15px;
     margin-left: 0.5rem;
-    color: #222;
+    margin-right: 0.5rem;
 }
 
-.submit {
-    all: unset;
-    display: block;
-    width: max-content;
-    border: 1px solid #888;
-    background-color: #ddd;
-    color: #222;
-    margin-top: 0.5rem;
-    padding: 8px;
-    font-size: 16px;
-    border-radius: 2px;
+.optionsButton :global(.icon-tabler) {
+    stroke-width: 1.5px;
+}
+
+.sourceEntry {
+    display: flex;
+    align-items: center;
 }

@@ -14,6 +14,7 @@ import { Transition } from "./components/reader/transition"
 
 window.addEventListener("popstate", () => {
     globalState.route = parseRoute(window.location)
+    globalState.strobeReset = true
 })
 
 useEffect(() => {
@@ -58,6 +59,11 @@ function Top() {
     }
     const transition = globalState.transition
 
+    if (globalState.strobeReset) {
+        globalState.strobeReset = false
+        return null
+    }
+
     return <>
         <ErrorBar/>
         <Modal/>
@@ -85,6 +91,7 @@ const onResize = () => {
     globalState.mobile = mobile
 
     const rootStyle = document.documentElement.style
+    rootStyle.setProperty("--app-width", `${window.innerWidth}px`)
     rootStyle.setProperty("--app-height", `${window.innerHeight}px`)
 
     document.body.classList.toggle("mobile", mobile)

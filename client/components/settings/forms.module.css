@@ -1,0 +1,117 @@
+
+.form {
+    width: 100%;
+    --label-width: 5rem;
+}
+
+.formHeading {
+    font-size: 18px;
+    font-weight: normal;
+    color: #444;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+}
+
+.inputParent {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.inputParent + .inputParent {
+    margin-top: 0.5rem;
+}
+
+.input {
+    padding: 4px;
+    height: 32px;
+    font-size: 14px;
+    border-radius: 2px;
+    border: 1px solid #888;
+    background-color: #fff;
+    color: #000;
+    flex-grow: 1;
+    flex-basis: 12rem;
+    min-width: 2rem;
+}
+
+.input:disabled {
+    background-color: #eaeaf7;
+    border: 1px solid #7f8085;
+    color: #595a5c;
+}
+
+.group {
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    font-size: 14px;
+    color: #555;
+}
+
+.label {
+    font-size: 14px;
+    margin-left: 0.5rem;
+    color: #444;
+    flex-basis: var(--label-width);
+    flex-shrink: 10;
+}
+
+.submit {
+    all: unset;
+    display: block;
+    width: max-content;
+    color: var(--color-act);
+    font-size: 16px;
+    padding: 10px;
+    background-color: var(--color-act-bg);
+    border: 1px solid var(--color-act-border);
+    border-radius: 8px;
+}
+
+.submit:hover {
+    color: var(--color-act-hi);
+    background-color: var(--color-act-bg-hi);
+}
+
+.submit:disabled {
+    background-color: #eaeaf7;
+    border: 1px solid #cccfdb;
+    color: #595a5c;
+}
+
+.button {
+    all: unset;
+    display: block;
+    width: max-content;
+    color: var(--color-act);
+    margin-top: 0.8rem;
+    font-size: 16px;
+    padding: 10px;
+    background-color: var(--color-act-bg);
+    border: 1px solid var(--color-act-border);
+    border-radius: 8px;
+}
+
+.addSourceButton {
+    margin-top: 1.5rem;
+}
+
+.list {
+    width: 100%;
+}
+
+.listEntry {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+
+.listEntry + .listEntry {
+    border-top: none;
+}
+
+.optionsButton {
+    color: #000;
+}

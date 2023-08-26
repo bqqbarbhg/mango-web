@@ -34,8 +34,6 @@ export function showHighlight(element: HTMLElement, options: HighlightOptions) {
     div.style.touchAction = "none"
     div.style.pointerEvents = "none"
 
-    console.log(div)
-
     const targetScale = options.targetScale ?? 1
     const duration = options.duration * 1000
     const anim = div.animate([

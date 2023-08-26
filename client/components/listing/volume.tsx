@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "kaiku"
 import { Volume, globalState, navigateTo, parseRoute, transitionTo } from "../../state"
 import { Link } from "../common/link"
-import { sourceGetBlob } from "../../utils/source"
+import { sourceFetchBlob } from "../../utils/source"
 
 type Props = {
     volume: Volume
@@ -17,7 +17,7 @@ export function Volume(props: Props) {
 
 
     useEffect(() => {
-        sourceGetBlob(volume.source, `${path}/cover.jpg`)
+        sourceFetchBlob(volume.source, `${path}/cover.jpg`)
             .then((blob) => {
                 state.imgSrc = URL.createObjectURL(blob)
             })

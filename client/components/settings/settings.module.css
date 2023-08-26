@@ -1,0 +1,171 @@
+
+.settingsTop {
+    height: 100%;
+    display: flex;
+    transition: transform 0.3s ease;
+    transform: translateX(0);
+}
+
+:global(.mobile) .settingsTop {
+    width: max-content;
+}
+
+:global(.mobile) .settingsTop.hide {
+    transform: translateX(calc(0px - var(--app-width)));
+}
+
+.settingsNav {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding-top: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    width: 100%;  
+    flex-basis: 240px;
+    max-width: 240px;
+    flex-shrink: 100;
+    border-right: 1px solid #ddd;
+}
+
+:global(.mobile) .settingsNav {
+    flex-basis: var(--app-width);
+    width: var(--app-width);
+    max-width: unset;
+}
+
+.settingsUser {
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+}
+
+.settingsUser :global(.icon) {
+    margin-right: 0.25rem;
+}
+
+.settingsButton {
+    display: flex;
+    text-decoration: none;
+    font-size: 18px;
+    color: #111;
+    user-select: none;
+    -webkit-user-select: none;
+    align-items: center;
+    cursor: pointer;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+
+.settingsNavSpace {
+    height: 1.5rem;
+}
+
+.settingsButton + .settingsButton {
+    border-top: none;
+}
+
+.settingsButtonSelected {
+    font-weight: bold;
+}
+
+.settingsButtonSelected .settingsButtonIcon :global(.icon-tabler) {
+    stroke-width: 2.25px;
+}
+
+.settingsButtonArrowRight {
+    margin-right: 0.15rem;
+    margin-left: auto;
+    color: #aaa;
+}
+
+.settingsButtonArrowLeft {
+    margin-right: 0.1rem;
+}
+
+.settingsButtonIcon {
+    margin-right: 0.5rem;
+}
+
+.logoutButton {
+    text-align: left;
+    color: #a00;
+}
+
+.settingsMain {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    flex-basis: 500px;
+    flex-grow: 2;
+}
+
+:global(.mobile) .settingsMain {
+    flex-basis: var(--app-width);
+    width: var(--app-width);
+}
+
+.settingsBackParent {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #ddd;
+    height: 50px;
+}
+
+.settingsBackLink {
+    font-size: 18px;
+    display: flex;
+    text-decoration: none;
+    color: #000;
+    align-items: center;
+    color: var(--color-act);
+    width: 20rem;
+}
+
+.settingsBackCenterer {
+    width: 20rem;
+}
+
+.settingsBackLabel {
+    margin-left: 1rem;
+    margin-right: 1rem;
+    font-size: 17px;
+    color: #555;
+}
+
+.settingsScroll {
+    overflow-y: auto;
+}
+
+.settingsContent {
+    padding: 1rem;
+    max-width: 500px;
+}
+
+.submit {
+    all: unset;
+    display: block;
+    width: max-content;
+    border: 1px solid #888;
+    background-color: #ddd;
+    color: var(--color-act);
+    margin-top: 0.5rem;
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 2px;
+}
+
+.flexLeft {
+    flex-grow: 1;
+}

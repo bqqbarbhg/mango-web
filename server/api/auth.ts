@@ -20,13 +20,17 @@ function constantTime<T, U extends any[]>(timeMs: number, func: (...args: U) => 
     }
 }
 
+function checkPassword(password: string) {
+    if (password.length === 0) throw new UserError("Empty password")
+}
+
 apiRoute("POST /auth/register", constantTime(500, async (req) => {
+    checkPassword(req.password)
     const passwordHash = await bcrypt.hash(req.password, 10)
 
     if (req.username.length === 0) throw new UserError("Empty username")
     const badChar = req.username.match(/[^a-zA-Z0-9_\.]/)
     if (badChar) throw new UserError(`Forbidden character '${badChar[0]}' (U+${badChar[0].charCodeAt(0).toString(16).toUpperCase()}) in username`)
-    if (req.password.length === 0) throw new UserError("Empty password")
     if (!req.email.match(/.+@.+/)) throw new UserError("Malformed email address")
 
     try {
@@ -84,6 +88,29 @@ apiRouteAuth("POST /auth/logout", async (req, user) => {
         WHERE id=${user.sessionId}
     `)
     return { ok: result.changes !== undefined && result.changes > 0 }
+})
+
+apiRouteAuth("POST /auth/password", async (req, user) => {
+    const dbUser = await db.select(t.type({
+        password: t.string,
+    }), sql`
+        SELECT password
+        FROM Users WHERE id=${user.userId}
+    `)
+
+    const ok = await bcrypt.compare(req.oldPassword, dbUser.password)
+    if (!ok) throw new UserError("Old password does not match")
+
+    checkPassword(req.newPassword)
+    const passwordHash = await bcrypt.hash(req.newPassword, 10)
+
+    db.run(sql`
+        UPDATE Users
+        SET password=${passwordHash}
+        WHERE id=${user.userId} AND password=${dbUser.password}
+    `)
+
+    return { }
 })
 
 apiRouteAuth("GET /auth/sessions", async (req, user) => {

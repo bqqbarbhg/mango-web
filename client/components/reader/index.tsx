@@ -4,7 +4,7 @@ import ImageView from "../../reader/image-view-webgl";
 import { apiCall } from "../../utils/api";
 import { fetchSources, refreshFlashcards, refreshVolumes } from "../../utils/fetching";
 import { Reader } from "./reader";
-import { sourceGetJson } from "../../utils/source";
+import { sourceFetchJson } from "../../utils/source";
 import { validate } from "../../utils/validation";
 
 function Loader() {
@@ -80,8 +80,8 @@ export function Index({ route }: { route: RouteRead }) {
         }
 
         try {
-            const pMangoContent = sourceGetJson(source, `${path}/mango-content.json`)
-            const pMangoInfo = sourceGetJson(source, `${path}/mango-info.json`)
+            const pMangoContent = sourceFetchJson(source, `${path}/mango-content.json`)
+            const pMangoInfo = sourceFetchJson(source, `${path}/mango-info.json`)
             const [mangoContent, mangoInfo] = await Promise.all([pMangoContent, pMangoInfo])
 
             const currentVolume = {

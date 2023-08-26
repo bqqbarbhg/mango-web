@@ -2,12 +2,22 @@
 :root {
     --hint-margin: 8px;
     --app-height: 100%;
+    --color-act: rgb(199, 107, 21);
+    --color-act-hi: rgb(224, 167, 113);
+    --color-act-bg: rgb(248, 240, 231);
+    --color-act-bg-hi: rgb(238, 230, 218);
+    --color-act-border: rgb(241, 230, 220);
+    --color-danger: rgb(202, 16, 16);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+ul,ol {
+    list-style: none;
 }
 
 button {
@@ -41,8 +51,34 @@ body {
     overflow: hidden;
 }
 
+.auth-form-parent {
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 2rem;
+}
+
+.mobile .auth-form-parent {
+    max-width: unset;
+}
+
+.auth-form.auth-form {
+    --label-width: 9rem;
+}
+
+.auth-link {
+    margin-top: 2rem;
+}
+
+.mobile .auth-form {
+    margin-left: 1rem;
+    margin-right: 1rem;
+    width: 100%;
+}
+
 .top-div {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
@@ -121,7 +157,7 @@ body {
 /* Errors */
 
 .error-parent {
-    position: absolute;
+    position: fixed;
     top: 0.25em;
     left: 50%;
     transform: translateX(-50%);
@@ -174,7 +210,7 @@ body {
 /* Modals */
 
 .modal-parent {
-    position: absolute;
+    position: fixed;
     top: 0px;
     left: 0px;
     z-index: 4;
@@ -189,13 +225,13 @@ body {
 }
 
 .modal-highlight {
-    position: absolute;
+    position: fixed;
     background-color: rgba(255,255,255,0.25);
     border-radius: 8px;
 }
 
 .modal {
-    position: absolute;
+    position: fixed;
     background-color: white;
     width: max-content;
     overflow: hidden;
@@ -366,7 +402,7 @@ body {
 }
 
 .chapter-list {
-    position: absolute;
+    position: fixed;
     bottom: 3rem;
     right: -2rem;
     width: max-content;
@@ -399,7 +435,7 @@ body {
 /* -- overlay -- */
 
 .overlay-root {
-    position: absolute;
+    position: fixed;
     /* transition: all 0.1s linear; */
     display: none;
     background-color: rgb(255, 251, 244);
@@ -642,7 +678,7 @@ body {
 }
 
 .reader-main {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -654,7 +690,7 @@ body {
 }
 
 .reader-chapters {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;

@@ -48,6 +48,13 @@ const apiRoutes = {
             ok: t.boolean,
         }),
     },
+    "POST /auth/password": {
+        req: t.type({
+            oldPassword: t.string,
+            newPassword: t.string,
+        }),
+        res: t.type({ }),
+    },
     "GET /auth/sessions": {
         req: t.type({ }),
         res: t.type({

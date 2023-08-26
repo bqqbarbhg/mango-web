@@ -1,6 +1,6 @@
 import { Source, SourceIndex, Volume, globalState, pushError } from "../state"
 import { apiCall } from "./api"
-import { sourceGetJson } from "./source"
+import { sourceFetchJson } from "./source"
 import { validate } from "./validation"
 
 export async function fetchSources(): Promise<boolean> {
@@ -20,7 +20,7 @@ export async function fetchSources(): Promise<boolean> {
 
 async function refreshSource(source: Source) {
     try {
-        const json = await sourceGetJson(source, "index.json")
+        const json = await sourceFetchJson(source, "index.json")
         const sourceIndex = validate(SourceIndex, json)
 
         return sourceIndex.volumes
@@ -37,7 +37,6 @@ export async function refreshFlashcards(): Promise<boolean> {
     if (!user) return false
     try {
         const result = await apiCall("GET /flashcards", {})
-        console.log(result)
         user.flashcards = result.results
         user.flashcardLevel = new Map(result.results.map(f => [f.word, 1]))
         return true

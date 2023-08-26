@@ -1,8 +1,11 @@
 import { useEffect, useState } from "kaiku";
-import { SourceAuth, globalState, pushError } from "../../state";
+import { Source, SourceAuth, globalState, pushError, showModal } from "../../state";
 import { apiCall } from "../../utils/api";
 import { fetchSources } from "../../utils/fetching";
 import * as css from "./sources.module.css"
+import { Form, FormGroup, FormHeading, FormInputSelect, FormInputSubmit, FormInputText, FormList, FormListEntry, FormMenuButton } from "./forms";
+import IconTrash from "@tabler/icons/trash.svg"
+import { findModalTarget } from "../common/modal";
 
 function SourceForm() {
     type State = {
@@ -32,65 +35,63 @@ function SourceForm() {
         state.auth = { type: "none" }
     }
 
+    const onAuthType = (e: InputEvent) => {
+        const type = (e.target as HTMLInputElement).value
+        if (type !== state.auth.type) {
+            if (type === "none") {
+                state.auth = {
+                    type: "none",
+                }
+            } else if (type === "basic") {
+                state.auth = {
+                    type: "basic",
+                    username: "",
+                    password: "",
+                }
+            }
+        }
+    }
+
     const auth = state.auth
-    return  <form onSubmit={sourceSubmit}>
-        <div className={css.sourceForm}>
-            <div className={css.sourceInputParent}>
-                <div className={css.sourceInput}>
-                    <input className={css.input} id="source-url" value={() => state.url} onInput={(e: any) => state.url = e.target.value} />
-                </div>
-                <label className={css.sourceInputLabel} for="source-url">URL</label>
-            </div>
-            <div className={css.sourceInputParent}>
-                <div className={css.sourceInput}>
-                    <select className={css.input} id="source-auth" onInput={(e: any) => {
-                        const type = e.target.value
-                        if (type !== state.auth.type) {
-                            if (type === "none") {
-                                state.auth = {
-                                    type: "none",
-                                }
-                            } else if (type === "basic") {
-                                state.auth = {
-                                    type: "basic",
-                                    username: "",
-                                    password: "",
-                                }
-                            }
-                        }
-                    }}>
-                        <option value="none" selected={auth.type === "none"}>None</option>
-                        <option value="basic" selected={auth.type === "basic"}>Basic</option>
-                    </select>
-                </div>
-                <label className={css.sourceInputLabel} for="source-auth">Authentication</label>
-            </div>
-            {auth.type !== "none" ?
-                <div className={css.authParent}>
-                    {auth.type === "basic" ?
-                        <>
-                            <div className={css.sourceInputParent}>
-                                <div className={css.sourceInput}>
-                                    <input id="source-auth-username" className={css.input} value={() => auth.username} onInput={(e: any) => auth.username = e.target.value} />
-                                </div>
-                                <label className={css.sourceInputLabel} for="source-auth-username">Username</label>
-                            </div>
-                            <div className={css.sourceInputParent}>
-                                <div className={css.sourceInput}>
-                                    <input id="source-auth-password" className={css.input} value={() => auth.password} onInput={(e: any) => auth.password = e.target.value} />
-                                </div>
-                                <label className={css.sourceInputLabel} for="source-auth-password">Password</label>
-                            </div>
-                        </>
-                    : null}
-                </div>
-            : null}
-        </div>
-        <input className={css.submit} type="submit" value="Add source" />
-    </form>
+    return  <Form onSubmit={sourceSubmit}>
+        <FormGroup title="Source" />
+        <FormInputText data={state} prop="url" label="URL" />
+
+        <FormGroup title="Authentication" />
+        <FormInputSelect
+            data={auth}
+            prop="type"
+            id="auth-type"
+            label="Method"
+            onInput={onAuthType}
+            options={[
+                { key: "none", label: "None" },
+                { key: "basic", label: "Basic" },
+            ]} />
+        {auth.type === "basic" ?
+            <>
+                <FormInputText data={auth} id="auth-basic-username" prop="username" label="Username" />
+                <FormInputText data={auth} id="auth-basic-password" prop="password" type="password" label="Password" />
+            </>
+        : null}
+
+        <FormInputSubmit label="Add source" />
+    </Form>
 }
 
-export function Sources() {
+export function SourceEntry({ source, onOptions }: {
+    source: Source
+    onOptions: (e: MouseEvent) => void,
+}) {
+    return <FormListEntry className={css.sourceEntry}>
+        <div className={css.sourceName}>
+            {source.url}
+        </div>
+        <FormMenuButton onClick={onOptions} />
+    </FormListEntry>
+}
+
+export function SourceList() {
     const user = globalState.user
     if (!user) return null
 
@@ -103,6 +104,20 @@ export function Sources() {
         }
     }
 
+    const onOptions = async (e: MouseEvent, uuid: string) => {
+        const value = await showModal({
+            options: [
+                { key: "delete", text: "Delete", icon: IconTrash },
+            ],
+            targetPosition: "bottom-left",
+            targetElement: findModalTarget(e.target, "button"),
+            allowCancel: true,
+        })
+
+        if (value === "delete") {
+            deleteSource(uuid)
+        }
+    }
 
     const state = useState({
         loaded: false,
@@ -113,14 +128,23 @@ export function Sources() {
         state.loaded = true
     }
 
+    return <FormList>
+        {user.sources.map(source =>
+            <SourceEntry
+                source={source}
+                onOptions={(e) => onOptions(e, source.uuid)}
+            />)}
+    </FormList>
+}
+
+export function Sources() {
     return <div>
-        <ul>
-            {user.sources.map(source => <li>
-                <span>{source.url}</span>
-                <button onClick={() => deleteSource(source.uuid)}>Delete</button>
-            </li>)}
-        </ul>
         <div>
+            <FormHeading>Sources</FormHeading>
+            <SourceList />
+        </div>
+        <div>
+            <FormHeading>Add</FormHeading>
             <SourceForm />
         </div>
     </div>

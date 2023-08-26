@@ -1,6 +1,10 @@
 import { useEffect, useState } from "kaiku";
 import { apiCall } from "../../utils/api";
-import { pushError } from "../../state";
+import { pushError, showModal } from "../../state";
+import { FormButton, FormHeading, FormList, FormListEntry, FormMenuButton } from "./forms";
+import * as css from "./sessions.module.css"
+import { findModalTarget } from "../common/modal";
+import IconLogout from "@tabler/icons/logout.svg"
 
 type Session = {
     uuid: string,
@@ -20,11 +24,25 @@ function Session(props: { session: Session, reload: () => any }) {
         props.reload()
     }
 
-    return <div>
-        <div>{props.session.uuid}</div>
+    const onOptions = async (e: MouseEvent) => {
+        const value = await showModal({
+            options: [
+                { key: "logout", text: "Log out", icon: IconLogout },
+            ],
+            targetPosition: "bottom-left",
+            targetElement: findModalTarget(e.target, "button"),
+            allowCancel: true,
+        })
+
+        if (value === "logout") {
+            logout()
+        }
+    }
+
+    return <FormListEntry className={css.sessionEntry}>
         <div>{props.session.device}</div>
-        <button onClick={logout}>Log out</button>
-    </div>
+        <FormMenuButton onClick={onOptions} />
+    </FormListEntry>
 }
 
 export function Sessions() {
@@ -61,9 +79,10 @@ export function Sessions() {
     }
 
     return <div>
-        <button onClick={logoutAll}>Log out all</button>
-        <div>
+        <FormHeading>Sessions</FormHeading>
+        <FormList>
             {state.sessions.map(s => <Session session={s} reload={reloadSessions} />)}
-        </div>
+        </FormList>
+        <FormButton onClick={logoutAll}>Log out all</FormButton>
     </div>
 }

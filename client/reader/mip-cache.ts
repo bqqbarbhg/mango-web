@@ -1,5 +1,5 @@
 import { MangoContent, Source, pushError } from "../state"
-import { sourceGetBuffer, sourceGetJson } from "../utils/source"
+import { sourceFetchBuffer, sourceFetchJson } from "../utils/source"
 
 type MipData = {
     data: DataView
@@ -164,7 +164,7 @@ export class MipCache {
         file.state = "loading"
 
         try {
-            const result = await sourceGetBuffer(this.source, path)
+            const result = await sourceFetchBuffer(this.source, path)
             const mips = parseMipFile(new DataView(result))
             if (mips.length !== file.pageCount) {
                 throw new Error("unexpected mip count")

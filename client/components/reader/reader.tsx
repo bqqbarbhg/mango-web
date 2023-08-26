@@ -11,7 +11,7 @@ import { parseKtx, ktxJson } from "../../utils/ktx";
 import { MipCache } from "../../reader/mip-cache";
 import { Overlay } from "../overlay/overlay";
 import { OverlayManager } from "../../reader/overlay-manager";
-import { sourceGetJson } from "../../utils/source";
+import { sourceFetchJson } from "../../utils/source";
 import * as V from "../../utils/validation"
 import * as PJ from "../../reader/page-json"
 import { immutable } from "kaiku"
@@ -176,7 +176,7 @@ export class Reader extends Component<Props, State> {
         try {
             const pageNumber = (page + 1).toString().padStart(3, "0")
             const path = `${currentVolume.path}/page${pageNumber}.json`
-            const json = await sourceGetJson(currentVolume.source, path)
+            const json = await sourceFetchJson(currentVolume.source, path)
 
             const overlayPage = await PJ.validatePageAsync(json)
 

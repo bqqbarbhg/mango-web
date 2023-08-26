@@ -177,7 +177,7 @@ export type ModalPosition =
 
 export type ModalOptions = {
     options: ModalOption[]
-    targetElement?: HTMLElement
+    targetElement?: Element | null
     targetPosition?: ModalPosition
     allowCancel?: boolean
 }
@@ -200,6 +200,7 @@ export type State = {
     transition: Transition | null
     transitionRequest: TransitionRequest | null
     mobile: boolean
+    strobeReset: boolean
 }
 
 export function parseRoute(location: URL | Location): Route {
@@ -339,7 +340,7 @@ function loadUser(): User | null {
         const anyUser = JSON.parse(userJson)
         const user = userSpec(anyUser)
         if (user instanceof V.Fail) {
-            console.error("Failed to load user, expected", V.formatFail(user))
+            pushError("Failed to load user", V.formatFail(user))
             return null
         }
 
@@ -353,7 +354,7 @@ function loadUser(): User | null {
             flashcardLevel: new Map(),
         }
     } catch (err) {
-        console.log(err)
+        pushError("Failed to load user", err)
         return null
     }
 }
@@ -401,6 +402,17 @@ useEffect(() => {
         title = "Settings"
     }
     document.title = `${title} | Mango`
+})
+
+window.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+        if (globalState.modal && globalState.modal.allowCancel) {
+            globalState.modal.resolve("cancel")
+            globalState.modal = null
+        }
+        e.stopPropagation()
+        e.preventDefault()
+    }
 })
 
 if (process.env.NODE_ENV !== "production") {

@@ -1,6 +1,8 @@
 import { useState } from "kaiku"
 import { apiCall } from "../../utils/api"
 import { clearErrors, globalState, pushError } from "../../state"
+import { Form, FormHeading, FormInputSubmit, FormInputText } from "../settings/forms"
+import { Link } from "../common/link"
 
 function LoginForm() {
     const state = useState({
@@ -42,46 +44,35 @@ function LoginForm() {
         }
     }
 
-    return <form onSubmit={login}>
-        <div>
-            <input
-                type="text"
-                id="login-username"
-                name="username"
-                value={() => state.username}
-                onInput={(e: any) => state.username = e.target.value}
-                disabled={state.pending}
-                required
-            />
-            <label for="login-username">Username</label>
+    return <Form onSubmit={login} className="auth-form">
+        <FormHeading>Login</FormHeading>
+        <FormInputText
+            data={state}
+            prop="username"
+            label="Username"
+            disabled={state.pending}
+            required={true}
+        />
+        <FormInputText
+            data={state}
+            prop="password"
+            type="password"
+            label="Password"
+            disabled={state.pending}
+            required={true}
+        />
+        <FormInputSubmit
+            label="Log in"
+            disabled={state.pending}
+        />
+        <div className="auth-link">
+            <Link href="/register">Register</Link>
         </div>
-        <div>
-            <input
-                type="password"
-                id="login-password"
-                name="password"
-                value={() => state.password}
-                onInput={(e: any) => state.password = e.target.value}
-                disabled={state.pending}
-                required
-            />
-            <label for="login-password">Password</label>
-        </div>
-        <div>
-            <input
-                type="submit"
-                value="Login"
-                disabled={state.pending}
-            />
-        </div>
-        <div>
-            <a href="/register">Register</a>
-        </div>
-    </form>
+    </Form>
 }
 
 export function Index() {
-    return <div>
+    return <div className="auth-form-parent">
         <LoginForm />
     </div>
 }

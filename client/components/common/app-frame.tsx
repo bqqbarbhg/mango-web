@@ -31,15 +31,6 @@ function AppNav({ mobile }: { mobile: boolean }) {
     const { user, route } = globalState
     if (!user) return null
 
-    async function logout() {
-        try {
-            await apiCall("POST /auth/logout", {})
-            clearUser()
-        } catch (err) {
-            pushError("Failed to log out", err, { deduplicate: true })
-        }
-    }
-
     return <nav className={{
             "main-nav": true,
             "main-nav-mobile": mobile,

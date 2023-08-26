@@ -2,6 +2,18 @@ import { useEffect, useState } from "kaiku"
 import { Modal, ModalOption, globalState } from "../../state"
 import Icon from "./icon"
 
+export function findModalTarget(element: any, tag: string): Element | null {
+    if (!(element instanceof Element)) return null
+
+    if (element.tagName.toLowerCase() === tag) {
+        return element
+    } else if (element.parentElement) {
+        return findModalTarget(element.parentElement, tag)
+    } else {
+        return null
+    }
+}
+
 function ModalOption({ option }: { option: ModalOption }) {
     const onClick = (e: MouseEvent) => {
         const modal = globalState.modal
@@ -112,4 +124,3 @@ export function Modal() {
         {modal ? <ModalContent modal={modal} /> : null}
     </div>
 }
-

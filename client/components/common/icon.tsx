@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "kaiku"
 
+type ClassName = string | ClassName[] | Record<string, boolean>
+
 export default function Icon(props: {
     svg: string
-    className?: string
+    className?: ClassName
 }) {
     const ref = useRef<HTMLElement>()
 
