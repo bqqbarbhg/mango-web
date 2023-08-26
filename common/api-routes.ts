@@ -182,6 +182,14 @@ const apiRoutes = {
         res: t.type({ }),
     },
 
+    // -- deploy
+    "POST /deploy/:key": {
+        req: t.type({
+            key: t.string,
+        }),
+        res: t.type({ }),
+    },
+
 } as const
 
 export default apiRoutes

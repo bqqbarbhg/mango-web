@@ -1,19 +1,23 @@
 import { randomBytes } from "node:crypto"
 import fs from "node:fs"
 import { sign, verify } from "jsonwebtoken"
+import { globalOptions } from "./options"
 
 type TokenPayload = {
     sessionId: number
     userId: number
 }
 
-const jwtKeyFile = "build/jwt-key"
-try {
-    fs.statSync(jwtKeyFile)
-} catch (err) {
-    fs.writeFileSync(jwtKeyFile, randomBytes(256))
+let jwtKey: Buffer
+export function setupJwt() {
+    const jwtKeyFile = `${globalOptions.root}/jwt-key`
+    try {
+        fs.statSync(jwtKeyFile)
+    } catch (err) {
+        fs.writeFileSync(jwtKeyFile, randomBytes(256))
+    }
+    jwtKey = fs.readFileSync(jwtKeyFile)
 }
-const jwtKey = fs.readFileSync(jwtKeyFile)
 
 export function signJwt(payload: TokenPayload): string {
     return sign(payload, jwtKey)

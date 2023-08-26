@@ -2,6 +2,7 @@ import sqlite3 from "sqlite3"
 import { Database, open, ISqlite } from "sqlite"
 import type { TypeOf, Type } from "io-ts"
 import sql, { SQLStatement } from "sql-template-strings"
+import { globalOptions } from "./options"
 
 export type InternalDB = Database<sqlite3.Database, sqlite3.Statement>
 export let db: DB
@@ -55,7 +56,7 @@ export async function setupDatabase(options: {
 } = { }) : Promise<DB> {
     sqlite3.verbose()
 
-    const path = options.databasePath ?? "build/database.db"
+    const path = options.databasePath ?? `${globalOptions.root}/database.db`
     const internalDB = await open({
         filename: path,
         driver: sqlite3.Database,
