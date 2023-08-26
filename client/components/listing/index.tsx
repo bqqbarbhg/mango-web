@@ -26,7 +26,6 @@ export function Index() {
     }
 
     return <div>
-        <h1>Listing</h1>
         <button
             onClick={update}
             disabled={state.pending}
