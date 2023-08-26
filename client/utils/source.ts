@@ -37,12 +37,12 @@ export async function sourceFetchJson(src: Source, path: string, options?: Sourc
     return response.json()
 }
 
-export async function sourceFetchBuffer(src: Source, path: string, options: SourceFetchOptions): Promise<ArrayBuffer> {
+export async function sourceFetchBuffer(src: Source, path: string, options?: SourceFetchOptions): Promise<ArrayBuffer> {
     const response = await sourceFetch(src, path, options)
     return response.arrayBuffer()
 }
 
-export async function sourceFetchBlob(src: Source, path: string, options: SourceFetchOptions): Promise<Blob> {
+export async function sourceFetchBlob(src: Source, path: string, options?: SourceFetchOptions): Promise<Blob> {
     const response = await sourceFetch(src, path, options)
     return response.blob()
 }

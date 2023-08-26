@@ -3,6 +3,15 @@ import { Volume, globalState, navigateTo, parseRoute, transitionTo } from "../..
 import { Link } from "../common/link"
 import { sourceFetchBlob } from "../../utils/source"
 
+async function loadImage(url: string): Promise<HTMLImageElement> {
+    const image = new Image()
+    return new Promise((resolve, reject) => {
+        image.addEventListener("load", () => resolve(image))
+        image.addEventListener("error", (err) => reject(err))
+        image.src = url
+    })
+}
+
 type Props = {
     volume: Volume
 }
@@ -26,17 +35,22 @@ export function Volume(props: Props) {
     const url = `${volume.source.url}/${path}`
 
     const href = `/read/${path}?source=${volume.source.url}`
-    const imgSrc = `${url}/cover.jpg`
-    const imgDst = volume.latestPage !== null ? `${url}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : imgSrc
-    const onClick = (e: MouseEvent) => {
+    const onClick = async (e: MouseEvent) => {
+        e.preventDefault()
+
+        const imgDstPath = volume.latestPage !== null ? `${path}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : `${path}/cover.jpg`
+        const imgDstBlob = await sourceFetchBlob(volume.source, imgDstPath)
+        const imgDstUrl = URL.createObjectURL(imgDstBlob)
+        const imgDst = await loadImage(imgDstUrl)
+
         if (imgRef.current) {
-            const rect = imgRef.current.getBoundingClientRect()
+            const srcRect = imgRef.current.getBoundingClientRect()
             transitionTo(href)
 
             const windowWidth = window.innerWidth
             const windowHeight = window.innerHeight
             const windowAspect = windowWidth / windowHeight
-            const imageAspect = rect.width / rect.height
+            const imageAspect = imgDst.width / imgDst.height
             let dstRect = null
             if (imageAspect < windowAspect) {
                 dstRect = {
@@ -57,17 +71,17 @@ export function Volume(props: Props) {
             globalState.transition = {
                 src: {
                     rect: {
-                        x: rect.x,
-                        y: rect.y,
-                        width: rect.width,
-                        height: rect.height,
+                        x: srcRect.x,
+                        y: srcRect.y,
+                        width: srcRect.width,
+                        height: srcRect.height,
                     },
-                    image: imgSrc,
+                    image: state.imgSrc,
                     opacity: 0.0,
                 },
                 dst: {
                     rect: dstRect,
-                    image: imgDst,
+                    image: imgDstUrl,
                     opacity: 1.0,
                 },
                 startTime: performance.now() * 1e-3,
@@ -80,18 +94,21 @@ export function Volume(props: Props) {
                 }
             }
         }
-        e.preventDefault()
         return true
     }
 
     useEffect(() => {
         const { transitionRequest } = globalState
-        if (transitionRequest && imgRef.current) {
+        if (transitionRequest && imgRef.current && state.imgSrc !== "") {
             if (transitionRequest.volumePath === path) {
                 globalState.transitionRequest = null
 
                 state.hide = true
-                window.setTimeout(() => {
+                window.setTimeout(async () => {
+                    const imgDstPath = volume.latestPage !== null ? `${path}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : `${path}/cover.jpg`
+                    const imgDstBlob = await sourceFetchBlob(volume.source, imgDstPath)
+                    const imgDstUrl = URL.createObjectURL(imgDstBlob)
+
                     const img = imgRef.current!
                     const rect = {
                         x: img.offsetLeft,
@@ -103,7 +120,7 @@ export function Volume(props: Props) {
                     globalState.transition = {
                         src: {
                             rect: transitionRequest.srcRect,
-                            image: imgDst,
+                            image: imgDstUrl,
                             opacity: 1.0,
                         },
                         dst: {
@@ -113,7 +130,7 @@ export function Volume(props: Props) {
                                 width: rect.width,
                                 height: rect.height,
                             },
-                            image: imgSrc,
+                            image: state.imgSrc,
                             opacity: 0.0,
                         },
                         startTime: performance.now() * 1e-3,

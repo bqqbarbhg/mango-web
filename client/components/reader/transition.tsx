@@ -96,8 +96,8 @@ export function Transition() {
             className={css.image}
             onLoad={bumpLoad}
             style={{
-                width: transition.src.rect.width,
-                height: transition.src.rect.height,
+                width: `${transition.src.rect.width}px`,
+                height: `${transition.src.rect.height}px`,
             }}
         />
         <img
@@ -106,8 +106,8 @@ export function Transition() {
             className={css.image}
             onLoad={bumpLoad}
             style={{
-                width: transition.src.rect.width,
-                height: transition.src.rect.height,
+                width: `${transition.src.rect.width}px`,
+                height: `${transition.src.rect.height}px`,
             }}
         />
     </div>

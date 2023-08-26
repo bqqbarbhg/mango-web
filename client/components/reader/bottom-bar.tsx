@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "kaiku"
 import { Link } from "../common/link"
 import { useFade } from "../../utils/fade"
-import { ChapterList } from "./chapter-list"
 import { globalState } from "../../state"
 import { readerInstance } from "./reader"
 import Icon from "../common/icon"
@@ -17,7 +16,6 @@ function ChapterListButton({ state }: { state: BottomBarState }) {
 
     return <div className="bottom-bar-button-parent chapter-list-button">
         {/* @ts-ignore */}
-        <ChapterList visible={state.visible} />
         <button className="bottom-bar-button" onClick={onClick}>
             <Icon svg={IconList} />
             <div className="bottom-bar-button-label">Chapters</div>
