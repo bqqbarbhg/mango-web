@@ -1,6 +1,6 @@
 import { MangoError, Source } from "../state"
 
-type SourceFetchOptions = {
+export type SourceFetchOptions = {
     method?: string,
     headers?: Record<string, string>
 }

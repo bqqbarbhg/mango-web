@@ -4,9 +4,11 @@ import { PageList } from "./page-list"
 import * as css from "./chapter-list.module.css"
 import { useFade } from "../../utils/fade"
 import { FillCircle } from "../common/fill-circle"
+import { useSourceBlobUrl } from "../../utils/blob-cache"
 
-export function Chapter({ chapterIndex }: {
-    chapterIndex: number,
+export function Chapter({ atlasUrl, chapterIndex }: {
+    atlasUrl: string
+    chapterIndex: number
 }) {
     const state = useState({
         expand: false,
@@ -77,7 +79,7 @@ export function Chapter({ chapterIndex }: {
         >
             <div className={css.pageContainer} ref={pageListRef}>
                 {!openFade.cull
-                    ? <PageList pageStart={firstPage} pageCount={pageCount} />
+                    ? <PageList atlasUrl={atlasUrl} pageStart={firstPage} pageCount={pageCount} />
                     : null}
             </div>
         </div>
@@ -88,10 +90,13 @@ export function ChapterList() {
     const volume = globalState.user?.currentVolume
     if (!volume) return null
 
+    const atlasPath = `${volume.path}/atlas.png`
+    const atlasUrl = useSourceBlobUrl(volume.source, atlasPath)
+
     const chapters = []
     for (let i = 0; i < volume.info.chapters.length; i++) {
         // @ts-ignore
-        chapters.push(<Chapter chapterIndex={i} key={i} />)
+        chapters.push(<Chapter atlasUrl={atlasUrl} chapterIndex={i} key={i} />)
     }
 
     return <div className={css.top}>

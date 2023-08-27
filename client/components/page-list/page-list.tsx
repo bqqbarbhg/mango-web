@@ -3,7 +3,8 @@ import { globalState } from "../../state";
 import * as css from "./page-list.module.css"
 import { readerInstance } from "../reader/reader";
 
-function Page({ index }: {
+function Page({ atlasUrl, index }: {
+    atlasUrl: string
     index: number
 }) {
     const volume = globalState.user?.currentVolume
@@ -50,8 +51,9 @@ function Page({ index }: {
                 [css.clicked]: state.clicked,
             })}
             style={{
-                width, height,
-                backgroundImage: `url(${volume.source.url}/${volume.path}/atlas.png)`,
+                width: `${width}px`,
+                height: `${height}px`,
+                backgroundImage: `url(${atlasUrl})`,
                 backgroundPosition: `-${pageContent.atlasX*ratio}px -${pageContent.atlasY*ratio}px`,
                 backgroundSize: `${atlas.width*ratio}px ${atlas.height*ratio}px`,
             }}>
@@ -59,7 +61,8 @@ function Page({ index }: {
     </div>
 }
 
-export function PageList({ pageStart, pageCount }: {
+export function PageList({ atlasUrl, pageStart, pageCount }: {
+    atlasUrl: string,
     pageStart: number,
     pageCount: number,
 }) {
@@ -68,7 +71,7 @@ export function PageList({ pageStart, pageCount }: {
 
     const pages = []
     for (let i = 0; i < pageCount; i++) {
-        pages.push(<Page index={pageStart + i} />)
+        pages.push(<Page atlasUrl={atlasUrl} index={pageStart + i} />)
     }
     return <div className={css.pageList}>
         {pages}

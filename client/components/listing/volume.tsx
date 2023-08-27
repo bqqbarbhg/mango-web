@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "kaiku"
 import { Volume, globalState, navigateTo, parseRoute, transitionTo } from "../../state"
 import { Link } from "../common/link"
 import { sourceFetchBlob } from "../../utils/source"
+import { sourceFetchBlobUrl, sourceFreeBlobUrl, useSourceBlobUrl } from "../../utils/blob-cache"
 
 async function loadImage(url: string): Promise<HTMLImageElement> {
     const image = new Image()
@@ -21,26 +22,18 @@ export function Volume(props: Props) {
     const imgRef = useRef<HTMLElement>()
     const state = useState({
         hide: false,
-        imgSrc: "",
     })
 
-
-    useEffect(() => {
-        sourceFetchBlob(volume.source, `${path}/cover.jpg`)
-            .then((blob) => {
-                state.imgSrc = URL.createObjectURL(blob)
-            })
-    })
-
-    const url = `${volume.source.url}/${path}`
+    const coverSrc = useSourceBlobUrl(volume.source, `${path}/cover.jpg`)
 
     const href = `/read/${path}?source=${volume.source.url}`
     const onClick = async (e: MouseEvent) => {
         e.preventDefault()
 
+        const imgSrcUrl = await sourceFetchBlobUrl(volume.source, `${path}/cover.jpg`)
+
         const imgDstPath = volume.latestPage !== null ? `${path}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : `${path}/cover.jpg`
-        const imgDstBlob = await sourceFetchBlob(volume.source, imgDstPath)
-        const imgDstUrl = URL.createObjectURL(imgDstBlob)
+        const imgDstUrl = await sourceFetchBlobUrl(volume.source, imgDstPath)
         const imgDst = await loadImage(imgDstUrl)
 
         if (imgRef.current) {
@@ -76,7 +69,7 @@ export function Volume(props: Props) {
                         width: srcRect.width,
                         height: srcRect.height,
                     },
-                    image: state.imgSrc,
+                    image: imgSrcUrl,
                     opacity: 0.0,
                 },
                 dst: {
@@ -91,7 +84,11 @@ export function Volume(props: Props) {
                 done: false,
                 onStart: () => {
                     state.hide = true
-                }
+                },
+                onEnd: () => {
+                    sourceFreeBlobUrl(imgSrcUrl)
+                    sourceFreeBlobUrl(imgDstUrl)
+                },
             }
         }
         return true
@@ -99,15 +96,16 @@ export function Volume(props: Props) {
 
     useEffect(() => {
         const { transitionRequest } = globalState
-        if (transitionRequest && imgRef.current && state.imgSrc !== "") {
+        if (transitionRequest && imgRef.current) {
             if (transitionRequest.volumePath === path) {
                 globalState.transitionRequest = null
 
                 state.hide = true
                 window.setTimeout(async () => {
+                    const imgSrcUrl = await sourceFetchBlobUrl(volume.source, `${path}/cover.jpg`)
+
                     const imgDstPath = volume.latestPage !== null ? `${path}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : `${path}/cover.jpg`
-                    const imgDstBlob = await sourceFetchBlob(volume.source, imgDstPath)
-                    const imgDstUrl = URL.createObjectURL(imgDstBlob)
+                    const imgDstUrl = await sourceFetchBlobUrl(volume.source, imgDstPath)
 
                     const img = imgRef.current!
                     const rect = {
@@ -130,7 +128,7 @@ export function Volume(props: Props) {
                                 width: rect.width,
                                 height: rect.height,
                             },
-                            image: state.imgSrc,
+                            image: imgSrcUrl,
                             opacity: 0.0,
                         },
                         startTime: performance.now() * 1e-3,
@@ -139,6 +137,8 @@ export function Volume(props: Props) {
                         started: false,
                         done: false,
                         onEnd: () => {
+                            sourceFreeBlobUrl(imgSrcUrl)
+                            sourceFreeBlobUrl(imgDstUrl)
                             globalState.route = globalState.transitionRoute!
                             globalState.transitionRoute = null
                             globalState.transition = null
@@ -152,7 +152,7 @@ export function Volume(props: Props) {
 
     return <div style={{ visibility: state.hide ? "hidden" : "visible" }}>
         <Link onClick={onClick} href={href}>
-            <img ref={imgRef} src={state.imgSrc} style={{width:"200px", height:"300px"}} />
+            <img ref={imgRef} src={coverSrc} style={{width:"200px", height:"300px"}} />
         </Link>
         <h3>{info.title.en}</h3>
         {info.title.jp ? <h4 lang="ja-jp">{info.title.jp}</h4> : null}
