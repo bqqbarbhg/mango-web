@@ -15,6 +15,7 @@ import IconChevronLeft from "@tabler/icons/chevron-left.svg"
 import IconChevronRight from "@tabler/icons/chevron-right.svg"
 import { useEffect, useState } from "kaiku"
 import { Account } from "./account"
+import { PreferencesTab } from "./preferences"
 
 const tabTitles: Record<string, string> = {
     preferences: "Preferences",
@@ -30,6 +31,9 @@ export function SettingsTab({ tab }: { tab: string | null }) {
         return <Sources />
     } else if (tab === "account") {
         return <Account />
+    } else if (tab === "preferences") {
+        // @ts-ignore
+        return <PreferencesTab />
     } else {
         return null
     }

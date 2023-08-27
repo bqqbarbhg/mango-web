@@ -32,15 +32,15 @@ export function deepEqual(a: any, b: any) {
 
 export function deepUnwrap<T>(a: T): T {
     if (Array.isArray(a)) {
-        const v = unwrap(a as any) as any[]
+        const v: any[] = []
         for (let i = 0; i < a.length; i++) {
-            v[i] = deepUnwrap(v[i])
+            v.push(deepUnwrap(a[i]))
         }
         return v as T
-    } else if (typeof a === "object") {
-        const v = unwrap(a as any) as any
-        for (const key in Object.keys(v)) {
-            v[key] = deepUnwrap(v[key])
+    } else if (typeof a === "object" && a !== null) {
+        const v: any = { }
+        for (const key of Object.keys(a)) {
+            v[key] = deepUnwrap((a as any)[key])
         }
         return v
     } else {

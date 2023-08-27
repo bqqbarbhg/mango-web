@@ -77,6 +77,7 @@ type Touch = {
 }
 
 type Props = {
+    onShowList: (e: MouseEvent) => void
 }
 
 type State = {
@@ -437,7 +438,7 @@ export class FlashcardTest extends Component<Props, State> {
             <div className="flashcard-header">
                 <div className="flashcard-filler" />
                 <div className="flashcard-left">{state.candidateCount} left</div>
-                <button className="flashcard-list-button">
+                <button className="flashcard-list-button" onClick={this.props.onShowList}>
                     <Icon svg={IconList} />
                 </button>
             </div>

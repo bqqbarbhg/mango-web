@@ -1,4 +1,5 @@
 import "./auth"
+import "./preferences"
 import "./sources"
 import "./volumes"
 import "./read"

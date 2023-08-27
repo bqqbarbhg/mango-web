@@ -1,8 +1,9 @@
 import { useState } from "kaiku"
 import { apiCall } from "../../utils/api"
-import { clearErrors, globalState, pushError } from "../../state"
+import { Preferences, clearErrors, globalState, pushError } from "../../state"
 import { Form, FormHeading, FormInputSubmit, FormInputText } from "../settings/forms"
 import { Link } from "../common/link"
+import * as V from "../../utils/validation"
 
 function LoginForm() {
     const state = useState({
@@ -30,11 +31,13 @@ function LoginForm() {
                 overlay: null,
                 flashcards: [],
                 flashcardLevel: new Map(),
+                preferences: V.validate(Preferences, user.preferences),
             }
 
             localStorage.setItem("user", JSON.stringify({
                 name: state.username,
                 token: user.token,
+                preferences: user.preferences,
             }))
             clearErrors()
         } catch (err) {

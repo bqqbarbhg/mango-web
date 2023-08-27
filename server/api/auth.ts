@@ -56,8 +56,9 @@ apiRoute("POST /auth/login", constantTime(1000, async (req) => {
     const user = await db.selectOptional(t.type({
         id: t.number,
         password: t.string,
+        settings: t.union([t.string, t.null]),
     }), sql`
-        SELECT id, password
+        SELECT id, password, settings
         FROM Users WHERE username=${req.username}
     `)
 
@@ -78,7 +79,8 @@ apiRoute("POST /auth/login", constantTime(1000, async (req) => {
         token: signJwt({
             userId: user.id,
             sessionId,
-        })
+        }),
+        preferences: user.settings ? JSON.parse(user.settings) : { },
     }
 }))
 

@@ -105,6 +105,16 @@ export type Flashcard = {
     answersCorrect: number
 }
 
+export const Preferences = V.subObject({
+    animations: V.failsafeValue(V.union([
+        V.literal("default"),
+        V.literal("on"),
+        V.literal("off"),
+    ]), "default"),
+})
+
+export type Preferences = V.ValidatorResult<typeof Preferences>
+
 export type User = {
     name: string
     token: string
@@ -114,6 +124,7 @@ export type User = {
     overlay: OverlayState | null
     flashcards: Flashcard[]
     flashcardLevel: Map<string, number>
+    preferences: Preferences
 }
 
 export type ErrorReport = {
@@ -201,6 +212,7 @@ export type State = {
     transitionRequest: TransitionRequest | null
     mobile: boolean
     strobeReset: boolean
+    reduceMotion: boolean
 }
 
 export function parseRoute(location: URL | Location): Route {
@@ -331,6 +343,7 @@ export function clearUser() {
 const userSpec = V.type("user", V.object({
     name: V.string,
     token: V.string,
+    preferences: V.any,
 }))
 
 function loadUser(): User | null {
@@ -352,6 +365,7 @@ function loadUser(): User | null {
             overlay: null,
             flashcards: [],
             flashcardLevel: new Map(),
+            preferences: V.validate(Preferences, user.preferences ?? { }),
         }
     } catch (err) {
         pushError("Failed to load user", err)
@@ -380,6 +394,8 @@ export const globalState = createState<State>({
     transition: null,
     transitionRequest: null,
     mobile: false,
+    strobeReset: false,
+    reduceMotion: false,
 })
 
 useEffect(() => {
@@ -402,6 +418,26 @@ useEffect(() => {
         title = "Settings"
     }
     document.title = `${title} | Mango`
+})
+
+useEffect(() => {
+    const user = globalState.user
+    if (!user) return
+    const { preferences } = user
+
+    const animations = preferences.animations ?? "default"
+    let reduceMotion = false
+    switch (animations) {
+        case "default":
+            reduceMotion = window.matchMedia("(prefers-reduced-motion)").matches
+            break
+        case "off":
+            reduceMotion = true
+            break
+    }
+
+    globalState.reduceMotion = reduceMotion
+    document.body.classList.toggle("reduce-motion", reduceMotion)
 })
 
 window.addEventListener("keydown", (e: KeyboardEvent) => {

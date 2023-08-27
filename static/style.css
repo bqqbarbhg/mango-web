@@ -8,12 +8,17 @@
     --color-act-bg-hi: rgb(238, 230, 218);
     --color-act-border: rgb(241, 230, 220);
     --color-danger: rgb(202, 16, 16);
+    --nav-height: 48px;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+.reduce-motion * {
+    transition-duration: 0s !important;
 }
 
 ul,ol {
@@ -90,6 +95,8 @@ body {
     display: flex;
     background-color: #222;
     flex-shrink: 0;
+    height: var(--nav-height);
+    z-index: 2;
 }
 
 .main-nav-mobile {
@@ -248,6 +255,10 @@ body {
     display: flex;
     align-items: center;
     background-color: white;
+}
+
+.icon {
+    font-size: 0;
 }
 
 .modal-option .icon {
@@ -799,9 +810,24 @@ body {
     height: 24px;
 }
 
+.flashcard-list-top {
+    position: fixed;
+    width: 100%;
+    height: calc(var(--app-height) - var(--nav-height));
+    z-index: 1;
+    background-color: white;
+    transform: translateY(0);
+    transition: transform 0.25s ease;
+}
+
+.flashcard-list-top.hide {
+    transform: translateY(100%);
+}
+
 .flashcard-list-button {
-    width: 24px;
-    height: 24px;
+    padding: 8px;
+    width: 40px;
+    height: 40px;
     color: #333;
 }
 

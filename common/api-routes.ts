@@ -40,6 +40,7 @@ const apiRoutes = {
         }),
         res: t.type({
             token: t.string,
+            preferences: t.UnknownRecord,
         }),
     },
     "POST /auth/logout": {
@@ -73,6 +74,20 @@ const apiRoutes = {
         }),
         res: t.type({
             ok: t.boolean,
+        }),
+    },
+
+    // -- preferences --
+    "POST /preferences": {
+        req: t.type({
+            preferences: t.UnknownRecord,
+        }),
+        res: t.type({ }),
+    },
+    "GET /preferences": {
+        req: t.type({ }),
+        res: t.type({
+            preferences: t.UnknownRecord,
         }),
     },
 

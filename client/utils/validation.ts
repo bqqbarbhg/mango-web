@@ -79,6 +79,19 @@ export function object<T extends ObjectValidator>(spec: T): ((obj: any) => Objec
     }
 }
 
+export function subObject<T extends ObjectValidator>(spec: T): ((obj: any) => ObjectResult<T>) {
+    return (obj: any) => {
+        const result: any = { }
+        if (typeof obj !== "object") return fail("object", obj)
+        for (const key of Object.keys(spec)) {
+            const r = (spec as any)[key]!(obj[key])
+            if (r instanceof Fail) return fail(`.${key}`, obj[key], r)
+            result[key] = r
+        }
+        return result as ObjectResult<T>
+    }
+}
+
 export function openObject<T extends ObjectValidator, U extends Validator>(spec: T, rest: U): ((obj: any) => ObjectResult<T & Record<string, U>>) {
     return (obj: any) => {
         const result: any = { }
@@ -196,6 +209,16 @@ export function defaultValue<T extends Validator>(spec: T, defaultValue: Validat
     return (obj: any) => {
         if (obj === undefined) return defaultValue
         return spec(obj)
+    }
+}
+
+export function failsafeValue<T extends Validator>(spec: T, failsafeValue: ValidatorResult<T>): ((obj: any) => ValidatorResult<T> | Fail) {
+    return (obj: any) => {
+        const r = spec(obj)
+        if (r instanceof Fail) {
+            return failsafeValue
+        }
+        return r
     }
 }
 

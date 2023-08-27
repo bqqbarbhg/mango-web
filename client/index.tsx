@@ -91,8 +91,10 @@ const onResize = () => {
     globalState.mobile = mobile
 
     const rootStyle = document.documentElement.style
+    const navHeight = mobile ? 56 : 48;
     rootStyle.setProperty("--app-width", `${window.innerWidth}px`)
     rootStyle.setProperty("--app-height", `${window.innerHeight}px`)
+    rootStyle.setProperty("--nav-height", `${navHeight}px`)
 
     document.body.classList.toggle("mobile", mobile)
     document.body.classList.toggle("desktop", !mobile)

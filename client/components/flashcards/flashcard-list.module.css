@@ -1,0 +1,23 @@
+
+.navTop {
+    display: flex;
+    height: 48px;
+    background-color: #eee;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    align-items: center;
+}
+
+.navSpacer {
+    flex-grow: 1;
+}
+
+.closeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-right: 8px;
+    color: #333;
+}

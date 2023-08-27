@@ -13,7 +13,8 @@ function updateTransition() {
     if (!bgElement || !srcElement || !dstElement || !transition) return
 
     const time = performance.now() * 1e-3
-    const t = Math.min((time - transition.startTime) / transition.duration, 1.0)
+    const t = globalState.reduceMotion ? 1 :
+        Math.min((time - transition.startTime) / transition.duration, 1.0)
     const { src, dst } = transition
     const alpha = smoothStep(t)
 
