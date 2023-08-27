@@ -4,14 +4,16 @@ export type SourceFetchOptions = {
     method?: string
     headers?: Record<string, string>
     cache?: boolean
+    ttl?: number
     etag?: string | null
 }
 
 let cacheDbRequest: IDBOpenDBRequest | null = null
 let cacheDb: IDBDatabase | null = null
+let cacheLoaded: boolean = false
 
-function initCache(): Promise<IDBDatabase> {
-    if (cacheDb) return Promise.resolve(cacheDb)
+function initCache(): Promise<IDBDatabase | null> {
+    if (cacheLoaded) return Promise.resolve(cacheDb)
     return new Promise((resolve, reject) => {
         let request = cacheDbRequest
 
@@ -22,21 +24,19 @@ function initCache(): Promise<IDBDatabase> {
             request.addEventListener("upgradeneeded", (e: IDBVersionChangeEvent) => {
                 const db = (e.target as any).result as IDBDatabase
 
-                db.createObjectStore("data", {
-                    keyPath: "key",
-                })
-                db.createObjectStore("etag", {
-                    keyPath: "key",
-                })
+                db.createObjectStore("cache", { keyPath: "key" })
+                db.createObjectStore("freshTime", { keyPath: "key" })
             })
 
             request.addEventListener("success", () => {
                 cacheDb = request!.result
                 cacheDbRequest = null
+                cacheLoaded = true
             })
 
             request.addEventListener("error", () => {
                 cacheDbRequest = null
+                cacheLoaded = true
             })
         }
 
@@ -51,57 +51,90 @@ function initCache(): Promise<IDBDatabase> {
     })
 }
 
-type EtagEntry = {
+type CacheEntry = {
     key: string
     etag: string
+    data: any
 }
 
-function getCachedEtag(db: IDBDatabase, key: string): Promise<string | null> {
+function getCacheEntry(db: IDBDatabase, key: string): Promise<CacheEntry | null> {
     return new Promise((resolve, reject) => {
         const req = db
-            .transaction("etag", "readonly")
-            .objectStore("etag")
+            .transaction("cache", "readonly")
+            .objectStore("cache")
             .get(key)
         
-        req.onsuccess = () => resolve(req.result?.etag ?? null)
+        req.onsuccess = () => resolve(req.result ?? null)
         req.onerror = () => reject(req.error)
     })
 }
 
-function getCachedData(db: IDBDatabase, key: string): Promise<any | null> {
-    return new Promise((resolve, reject) => {
+async function deleteCacheEntry(db: IDBDatabase, key: string): Promise<void> {
+    const deletePromise = new Promise((resolve, reject) => {
         const req = db
-            .transaction("data", "readonly")
-            .objectStore("data")
-            .get(key)
-        
-        req.onsuccess = () => resolve(req.result?.data ?? null)
-        req.onerror = () => reject(req.error)
-    })
-}
-
-async function storeCache(db: IDBDatabase, key: string, etag: string, data: any): Promise<void> {
-    const etagPromise = new Promise((resolve, reject) => {
-        const req = db
-            .transaction("etag", "readwrite")
-            .objectStore("etag")
-            .put({ key, etag })
+            .transaction("cache", "readwrite")
+            .objectStore("cache")
+            .delete(key)
         
         req.onsuccess = () => resolve(undefined)
         req.onerror = () => reject()
     })
 
-    const dataPromise = new Promise((resolve, reject) => {
+    await deletePromise
+}
+
+async function storeCacheEntry(db: IDBDatabase, key: string, etag: string, data: any): Promise<boolean> {
+    const storePromise = new Promise((resolve, reject) => {
         const req = db
-            .transaction("data", "readwrite")
-            .objectStore("data")
-            .put({ key, data })
+            .transaction("cache", "readwrite")
+            .objectStore("cache")
+            .put({ key, etag, data })
         
         req.onsuccess = () => resolve(undefined)
         req.onerror = () => reject()
     })
 
-    await Promise.all([etagPromise, dataPromise])
+    try {
+        await storePromise
+        return true
+    } catch (err) {
+        console.error("Failed to store source cache entry", err)
+        try {
+            await deleteCacheEntry(db, key)
+        } catch (err) {
+            console.error("Failed to delete cache entry after failure", err)
+        }
+        return false
+    }
+}
+
+function getCacheFreshTime(db: IDBDatabase, key: string): Promise<number | null> {
+    return new Promise((resolve, reject) => {
+        const req = db
+            .transaction("freshTime", "readonly")
+            .objectStore("freshTime")
+            .get(key)
+        
+        req.onsuccess = () => resolve(req.result.time ?? null)
+        req.onerror = () => reject(req.error)
+    })
+}
+
+async function updateCacheFreshTime(db: IDBDatabase, key: string): Promise<void> {
+    const time = Date.now()
+    try {
+        await new Promise((resolve, reject) => {
+            const req = db
+                .transaction("freshTime", "readwrite")
+                .objectStore("freshTime")
+                .put({ key, time })
+            
+            req.onsuccess = () => resolve(undefined)
+            req.onerror = () => reject()
+        })
+    } catch (err) {
+        console.error("Failed to update source cache fresh time", err)
+    }
 }
 
 export function sourceFetch(src: Source, path: string, options?: SourceFetchOptions): Promise<Response>
@@ -111,23 +144,42 @@ export async function sourceFetch<T>(src: Source, path: string, options?: Source
     const url = `${src.url}/${path}`
     const key = `${src.uuid}:${path}`
 
-    const cache = options?.cache ? (await initCache()) : null
+    let cache: IDBDatabase | null = null
+    if (options?.cache) {
+        try {
+            cache = await initCache()
+        } catch (err) {
+            console.error("Failed to initialize source cache", err)
+        }
+    }
 
-    let etag: string | null = null
+    let cacheEntry: CacheEntry | null = null
     if (cache) {
-        etag = await getCachedEtag(cache, key)
+        try {
+            cacheEntry = await getCacheEntry(cache, key)
+            const ttl = options?.ttl ?? null
+            if (cacheEntry && ttl !== null) {
+                const freshTime = await getCacheFreshTime(cache, key)
+                if (freshTime !== null && freshTime >= Date.now() - ttl) {
+                    return cacheEntry.data
+                }
+            }
+        } catch (err) {
+            console.error("Failed to fetch source cache entry", err)
+        }
+    }
+
+    const headers: Record<string, string> = { ...options?.headers }
+    if (src.auth.type === "basic") {
+        const auth = btoa(`${src.auth.username}:${src.auth.password}`)
+        headers["Authorization"] = `Basic ${auth}`
+        if (cacheEntry) {
+            headers["If-None-Match"] = cacheEntry.etag
+        }
     }
 
     let response: Response
     try {
-        const headers: Record<string, string> = { ...options?.headers }
-        if (src.auth.type === "basic") {
-            const auth = btoa(`${src.auth.username}:${src.auth.password}`)
-            headers["Authorization"] = `Basic ${auth}`
-            if (etag) {
-                headers["If-None-Match"] = etag
-            }
-        }
         response = await fetch(url, { method, headers })
     } catch (err) {
         throw new MangoError("fetch", `${method} ${url}: ${err.message ?? ""}`)
@@ -138,13 +190,16 @@ export async function sourceFetch<T>(src: Source, path: string, options?: Source
         value = await transform(value)
     }
 
-    if (cache && response.status === 304) {
-        const value = await getCachedData(cache, key)
-        return value
+    if (cacheEntry && response.status === 304) {
+        await updateCacheFreshTime(cache!, key)
+        return cacheEntry.data
     } else if (cache && response.status === 200) {
         const etag = response.headers.get("Etag")
         if (etag) {
-            await storeCache(cache, key, etag, value)
+            const ok =await storeCacheEntry(cache, key, etag, value)
+            if (ok) {
+                await updateCacheFreshTime(cache, key)
+            }
         }
     }
 

@@ -26,6 +26,7 @@ export function Volume(props: Props) {
 
     const coverSrc = useSourceBlobUrl(volume.source, `${path}/cover.jpg`, {
         cache: true,
+        ttl: 5*60*1000,
     })
 
     const href = `/read/${path}?source=${volume.source.url}`
@@ -34,6 +35,7 @@ export function Volume(props: Props) {
 
         const imgSrcUrl = await sourceFetchBlobUrl(volume.source, `${path}/cover.jpg`, {
             cache: true,
+            ttl: 5*60*1000,
         })
 
         const imgDstPath = volume.latestPage !== null ? `${path}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : `${path}/cover.jpg`
@@ -108,6 +110,7 @@ export function Volume(props: Props) {
                 window.setTimeout(async () => {
                     const imgSrcUrl = await sourceFetchBlobUrl(volume.source, `${path}/cover.jpg`, {
                         cache: true,
+                        ttl: 5*60*1000,
                     })
 
                     const imgDstPath = volume.latestPage !== null ? `${path}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : `${path}/cover.jpg`
