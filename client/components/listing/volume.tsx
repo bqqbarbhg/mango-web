@@ -24,13 +24,17 @@ export function Volume(props: Props) {
         hide: false,
     })
 
-    const coverSrc = useSourceBlobUrl(volume.source, `${path}/cover.jpg`)
+    const coverSrc = useSourceBlobUrl(volume.source, `${path}/cover.jpg`, {
+        cache: true,
+    })
 
     const href = `/read/${path}?source=${volume.source.url}`
     const onClick = async (e: MouseEvent) => {
         e.preventDefault()
 
-        const imgSrcUrl = await sourceFetchBlobUrl(volume.source, `${path}/cover.jpg`)
+        const imgSrcUrl = await sourceFetchBlobUrl(volume.source, `${path}/cover.jpg`, {
+            cache: true,
+        })
 
         const imgDstPath = volume.latestPage !== null ? `${path}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : `${path}/cover.jpg`
         const imgDstUrl = await sourceFetchBlobUrl(volume.source, imgDstPath)
@@ -102,7 +106,9 @@ export function Volume(props: Props) {
 
                 state.hide = true
                 window.setTimeout(async () => {
-                    const imgSrcUrl = await sourceFetchBlobUrl(volume.source, `${path}/cover.jpg`)
+                    const imgSrcUrl = await sourceFetchBlobUrl(volume.source, `${path}/cover.jpg`, {
+                        cache: true,
+                    })
 
                     const imgDstPath = volume.latestPage !== null ? `${path}/page${volume.latestPage.toString().padStart(3, "0")}.thumb.jpg` : `${path}/cover.jpg`
                     const imgDstUrl = await sourceFetchBlobUrl(volume.source, imgDstPath)

@@ -20,7 +20,9 @@ export async function fetchSources(): Promise<boolean> {
 
 async function refreshSource(source: Source) {
     try {
-        const json = await sourceFetchJson(source, "index.json")
+        const json = await sourceFetchJson(source, "index.json", {
+            cache: true,
+        })
         const sourceIndex = validate(SourceIndex, json)
 
         return sourceIndex.volumes
