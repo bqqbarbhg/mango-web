@@ -19,11 +19,10 @@ export const LangString = V.type("LangString", V.openObject({
 
 export const VolumeInfo = V.type("VolumeInfo", V.object({
     path: V.string,
-    info: V.object({
+    info: V.openObject({
         title: LangString,
         volume: V.union([V.integer, V.toNull]),
-        numPages: V.integer,
-    }),
+    }, V.any),
 }))
 export type VolumeInfo = V.ValidatorResult<typeof VolumeInfo>
 
