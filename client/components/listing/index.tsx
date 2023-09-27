@@ -3,6 +3,7 @@ import { Source, globalState, pushError } from "../../state"
 import { apiCall } from "../../utils/api"
 import { Volume } from "./volume"
 import { refreshVolumes } from "../../utils/fetching"
+import * as css from "./listing.module.css"
 
 export function Index() {
     const user = globalState.user
@@ -25,7 +26,7 @@ export function Index() {
         state.loaded = true
     }
 
-    return <div>
+    return <div className={css.top} >
         <button
             onClick={update}
             disabled={state.pending}
