@@ -55,7 +55,7 @@ function SourceForm() {
     const auth = state.auth
     return  <Form onSubmit={sourceSubmit}>
         <FormGroup title="Source" />
-        <FormInputText data={state} prop="url" label="URL" />
+        <FormInputText data={state} type="url" prop="url" label="URL" required />
 
         <FormGroup title="Authentication" />
         <FormInputSelect
@@ -67,11 +67,12 @@ function SourceForm() {
             options={[
                 { key: "none", label: "None" },
                 { key: "basic", label: "Basic" },
-            ]} />
+            ]}
+        />
         {auth.type === "basic" ?
             <>
-                <FormInputText data={auth} id="auth-basic-username" prop="username" label="Username" />
-                <FormInputText data={auth} id="auth-basic-password" prop="password" type="password" label="Password" />
+                <FormInputText data={auth} id="auth-basic-username" prop="username" label="Username" required />
+                <FormInputText data={auth} id="auth-basic-password" prop="password" type="password" label="Password" required />
             </>
         : null}
 

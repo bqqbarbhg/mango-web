@@ -18,4 +18,3 @@ export default function Icon(props: {
         ? ["icon", props.className] : "icon"
     return <div className={className} ref={ref} />
 }
-

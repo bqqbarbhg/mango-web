@@ -196,7 +196,7 @@ export async function sourceFetch<T>(src: Source, path: string, options?: Source
     } else if (cache && response.status === 200) {
         const etag = response.headers.get("Etag")
         if (etag) {
-            const ok =await storeCacheEntry(cache, key, etag, value)
+            const ok = await storeCacheEntry(cache, key, etag, value)
             if (ok) {
                 await updateCacheFreshTime(cache, key)
             }
@@ -216,16 +216,13 @@ export async function sourceFetchJson(src: Source, path: string, options?: Sourc
         ...options?.headers,
     }
 
-    return sourceFetch(src, path, { ...options, headers },
-        r => r.json())
+    return sourceFetch(src, path, { ...options, headers }, r => r.json())
 }
 
 export async function sourceFetchBuffer(src: Source, path: string, options?: SourceFetchOptions): Promise<ArrayBuffer> {
-    return sourceFetch(src, path, options,
-        r => r.arrayBuffer())
+    return sourceFetch(src, path, options, r => r.arrayBuffer())
 }
 
 export async function sourceFetchBlob(src: Source, path: string, options?: SourceFetchOptions): Promise<Blob> {
-    return sourceFetch(src, path, options,
-        r => r.blob())
+    return sourceFetch(src, path, options, r => r.blob())
 }
