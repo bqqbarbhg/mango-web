@@ -59,7 +59,12 @@ function requestTransition() {
 
 let loadCount = 0
 
-const bumpLoad = () => {
+const bumpLoad = async (e?: Event) => {
+    const img = e?.target
+    if (img instanceof HTMLImageElement) {
+        await img.decode()
+    }
+
     loadCount++
     if (loadCount === 3) {
         doLoad()
