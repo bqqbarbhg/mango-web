@@ -1,6 +1,8 @@
+import { FC } from "kaiku";
 import { ErrorReport, MangoError, closeError, globalState } from "../../state";
 
-function ErrorEntry({ report }: { report: ErrorReport }) {
+type ErrorEntryProps = { report: ErrorReport }
+const ErrorEntry: FC<ErrorEntryProps> = ({ report }: ErrorEntryProps) => {
     const error = report.error
     let message: string = ""
     if (error instanceof MangoError) {
@@ -31,7 +33,6 @@ function ErrorEntry({ report }: { report: ErrorReport }) {
 export function ErrorBar() {
     return <div className="error-parent">
         <ul className="error-list">
-            {/* @ts-ignore */}
             {globalState.errors.map(err => <ErrorEntry report={err} key={err.id} />)}
         </ul>
     </div>

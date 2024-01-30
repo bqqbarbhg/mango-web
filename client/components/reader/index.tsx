@@ -127,10 +127,8 @@ export function Index({ route }: { route: RouteRead }) {
     })
 
     return <>
-        {/* @ts-ignore */}
         {(state.pending || state.closed) ? 
             (!globalState.transitionRoute ? <Loader /> : null)
-            /*@ts-ignore*/
             : <Reader />}
     </>
 }

@@ -1,4 +1,4 @@
-import { unwrap, useEffect, useRef, useState } from "kaiku"
+import { FC, unwrap, useEffect, useRef, useState } from "kaiku"
 import { globalState } from "../../state"
 import { PageList } from "./page-list"
 import * as css from "./chapter-list.module.css"
@@ -6,10 +6,12 @@ import { useFade } from "../../utils/fade"
 import { FillCircle } from "../common/fill-circle"
 import { useSourceBlobUrl } from "../../utils/blob-cache"
 
-export function Chapter({ atlasUrl, chapterIndex }: {
+type ChapterProps = {
     atlasUrl: string
     chapterIndex: number
-}) {
+}
+
+export const Chapter: FC<ChapterProps> = ({ atlasUrl, chapterIndex }: ChapterProps) => {
     const state = useState({
         expand: false,
         pageHeight: 0.0,
@@ -95,8 +97,7 @@ export function ChapterList() {
 
     const chapters = []
     for (let i = 0; i < volume.info.chapters.length; i++) {
-        // @ts-ignore
-        chapters.push(<Chapter atlasUrl={atlasUrl} chapterIndex={i} key={i} />)
+        chapters.push(<Chapter atlasUrl={atlasUrl} chapterIndex={i} key={i.toString()} />)
     }
 
     return <div className={css.top}>

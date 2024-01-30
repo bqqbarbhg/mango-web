@@ -15,7 +15,6 @@ function ChapterListButton({ state }: { state: BottomBarState }) {
     }
 
     return <div className="bottom-bar-button-parent chapter-list-button">
-        {/* @ts-ignore */}
         <button className="bottom-bar-button" onClick={onClick}>
             <Icon svg={IconList} />
             <div className="bottom-bar-button-label">Chapters</div>

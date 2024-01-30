@@ -32,7 +32,6 @@ export function SettingsTab({ tab }: { tab: string | null }) {
     } else if (tab === "account") {
         return <Account />
     } else if (tab === "preferences") {
-        // @ts-ignore
         return <PreferencesTab />
     } else {
         return null

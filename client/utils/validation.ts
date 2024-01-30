@@ -54,12 +54,14 @@ type ObjectResult<T extends ObjectValidator> = {
     [key in keyof T]: ValidatorResult<T[key]>
 } | Fail
 type TupleResult<T extends TupleValidator> = {
+    // @ts-ignore
     [key in keyof T]: ValidatorResult<T[key]>
 } | Fail
 type UnionValidator = {
     [key: number]: Validator
 }
 type UnionResult<T extends UnionValidator> = {
+    // @ts-ignore
     [key in keyof T]: ValidatorResult<T[key]>
 }[number] | Fail
 

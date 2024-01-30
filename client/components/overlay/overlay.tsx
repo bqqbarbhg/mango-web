@@ -12,7 +12,6 @@ export function Overlay() {
 
     return <div className="overlay-root" ref={state.rootRef} onTouchStart={onTouchStart}>
         <div className="overlay-top">
-            {/* @ts-ignore */}
             {state.hint ? <Hint hint={state.hint} key={state.hintId.toString()} /> : null}
             {state.hint === null && state.translation !== null ? <Translation text={state.translation} /> : null}
         </div>

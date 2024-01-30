@@ -11,6 +11,6 @@
   "private": true,
   "dependencies": {
     "@tabler/icons": "^2.30.0",
-    "kaiku": "^1.21.6"
+    "kaiku": "^1.23.0"
   }
 }

@@ -29,14 +29,12 @@ export function Index({ route }: { route: RouteFlashcards }) {
     }
 
     return <>
-        {/*@ts-ignore*/}
         {listFade.cull ? null :
             <FlashcardList
                 hide={listFade.hide}
                 onClose={onCloseList}
             />
         }
-        {/*@ts-ignore*/}
         <FlashcardTest onShowList={onShowList}/>
     </>
 }

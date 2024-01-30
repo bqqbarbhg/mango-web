@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "kaiku"
-import { Volume, globalState, navigateTo, parseRoute, transitionTo } from "../../state"
+import { useEffect, useRef, useState, FC } from "kaiku"
+import { Volume as StateVolume, globalState, navigateTo, parseRoute, transitionTo } from "../../state"
 import { Link } from "../common/link"
 import { sourceFetchBlob } from "../../utils/source"
 import { sourceFetchBlobUrl, sourceFreeBlobUrl, useSourceBlobUrl } from "../../utils/blob-cache"
@@ -14,9 +14,9 @@ async function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 type Props = {
-    volume: Volume
+    volume: StateVolume
 }
-export function Volume(props: Props) {
+export const Volume: FC<Props> = (props: Props) => {
     const { volume } = props
     const { path, info } = volume.volume
     const imgRef = useRef<HTMLElement>()

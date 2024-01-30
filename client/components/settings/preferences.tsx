@@ -7,7 +7,7 @@ import { deepEqual, deepUnwrap } from "../../utils/deep";
 
 export function PreferencesTab() {
     const user = globalState.user
-    if (!user) return
+    if (!user) return null
 
     type State = {
         prev?: Preferences
@@ -45,7 +45,7 @@ export function PreferencesTab() {
     })
 
     const prefs = state.next
-    if (!prefs) return
+    if (!prefs) return null
 
     return <div>
         <Form onSubmit={() => {}}>

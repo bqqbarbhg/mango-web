@@ -5,7 +5,7 @@ type Props = {
     href: string
     children: Child|Child[]
     className?: any
-    onClick?: (e: MouseEvent) => boolean
+    onClick?: (e: MouseEvent) => boolean | Promise<boolean>
 }
 export function Link(props: Props) {
 

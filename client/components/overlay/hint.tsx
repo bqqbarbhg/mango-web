@@ -1,5 +1,5 @@
 import * as PJ from "../../reader/page-json"
-import { useRef, useState } from "kaiku"
+import { FC, useRef, useState } from "kaiku"
 import { apiCall } from "../../utils/api"
 import { InlineJapanese } from "../common/inline-japanese"
 import { globalState, pushError, showModal } from "../../state"
@@ -127,7 +127,7 @@ type ResultProps = {
     index: number
 }
 
-function Result({ hintSelectionState, result, index }: ResultProps) {
+const Result: FC<ResultProps> = ({ hintSelectionState, result, index }: ResultProps) => {
     const user = globalState.user
     if (!user) return null
 
@@ -257,7 +257,7 @@ function Result({ hintSelectionState, result, index }: ResultProps) {
 type HintProps = {
     hint: PJ.Hint,
 }
-export function Hint({ hint }: HintProps) {
+export const Hint: FC<HintProps> = ({ hint }: HintProps) => {
     const hintSelectionState = useState({
         selectedIndex: -1,
         extraExpand: false,
@@ -269,7 +269,6 @@ export function Hint({ hint }: HintProps) {
                     hintSelectionState={hintSelectionState}
                     result={r}
                     index={ix}
-                    // @ts-ignore
                     key={ix.toString()} />)}
         </div>
     </div>
