@@ -1,7 +1,7 @@
-import { unwrap, useEffect, useState } from "kaiku"
+import { useEffect, useShallowState } from "kaiku"
 import { Source, pushError } from "../state"
-import { SourceFetchOptions, sourceFetchBlob, sourceFetchJson } from "./source"
-import { deepEqual, deepUnwrap } from "./deep"
+import { SourceFetchOptions, sourceFetchBlob } from "./source"
+import { deepEqual } from "./deep"
 
 /*
 
@@ -169,7 +169,7 @@ export function useSourceBlobUrl(source: Source, path: string, options?: SourceF
         blobUrl: string
     }
 
-    const state = useState<State>({
+    const state = useShallowState<State>({
         token: 0,
         source: null,
         path: "",
@@ -187,7 +187,7 @@ export function useSourceBlobUrl(source: Source, path: string, options?: SourceF
     useEffect(() => {
         if (!deepEqual(source, state.source) || state.path !== path) {
             let token = ++state.token
-            state.source = deepUnwrap(source)
+            state.source = source
             state.path = path
 
             if (state.blobUrl) {

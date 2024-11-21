@@ -1,4 +1,4 @@
-import { FC, unwrap, useEffect, useRef, useState } from "kaiku"
+import { FC, useEffect, useRef, useState } from "kaiku"
 import { globalState } from "../../state"
 import { PageList } from "./page-list"
 import * as css from "./chapter-list.module.css"
@@ -21,8 +21,8 @@ export const Chapter: FC<ChapterProps> = ({ atlasUrl, chapterIndex }: ChapterPro
     const openFade = useFade(state.expand)
 
     useEffect(() => {
-        if (pageListRef.current) {
-            const ref = unwrap(pageListRef.current as any) as HTMLElement
+        const ref = pageListRef.current
+        if (ref) {
             state.pageHeight = ref.offsetHeight
             const observer = new ResizeObserver(() => {
                 state.pageHeight = ref.offsetHeight

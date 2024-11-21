@@ -1,4 +1,4 @@
-import { Component, useState, unwrap, useEffect, useRef, createState } from "kaiku";
+import { Component, useEffect, useRef, createState } from "kaiku";
 import { ClickInfo, DragInfo, PanZoom, ReleaseInfo } from "../../reader/pan-zoom"
 import { Viewport } from "../../reader/common";
 import ImageView, { ImageViewHighlight, ImageViewScene } from "../../reader/image-view";
@@ -82,7 +82,7 @@ export class Reader extends Component<Props, State> {
         useEffect(() => {
             if (this.initialized) return
 
-            const parent: HTMLElement | null = this.parentRef.current ? unwrap(this.parentRef.current as any) : null
+            const parent: HTMLElement | null = this.parentRef.current ?? null
             if (parent) {
                 this.panZoom = new PanZoom(parent)
                 this.imageView = new ImageViewWebGL(parent)
@@ -202,7 +202,7 @@ export class Reader extends Component<Props, State> {
         while (currentVolume.readPages.length <= pageBase) {
             currentVolume.readPages.push(0)
         }
-        currentVolume.readPages[pageBase] |= pageBit
+        currentVolume.readPages[pageBase]! |= pageBit
 
         try {
             await apiCall("POST /read/:*path", {

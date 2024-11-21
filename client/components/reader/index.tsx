@@ -1,6 +1,5 @@
-import { immutable, useState, unwrap, useEffect } from "kaiku";
+import { immutable, useState, useEffect } from "kaiku";
 import { MangoContent, MangoInfo, RouteRead, Source, globalState, navigateTo, pushError } from "../../state";
-import ImageView from "../../reader/image-view-webgl";
 import { apiCall } from "../../utils/api";
 import { fetchSources, refreshFlashcards, refreshVolumes } from "../../utils/fetching";
 import { Reader } from "./reader";
