@@ -2,8 +2,8 @@ import { Form, FormHeading, FormInputSelect, FormInputSubmit, FormInputText } fr
 import * as css from "./account.module.css"
 import { MangoError, Preferences, globalState, pushError } from "../../state";
 import { apiCall } from "../../utils/api";
-import { immutable, useEffect, useState } from "kaiku";
-import { deepEqual, deepUnwrap } from "../../utils/deep";
+import { immutable, useEffect, useShallowState, useState } from "kaiku";
+import { clone, deepEqual } from "../../utils/deep";
 
 export function PreferencesTab() {
     const user = globalState.user
@@ -14,18 +14,18 @@ export function PreferencesTab() {
         next?: Preferences
     }
 
-    const state = useState<State>({})
+    const state = useShallowState<State>({})
 
     useEffect(() => {
         if (!state.next) {
-            state.next = deepUnwrap(user.preferences)
-            state.prev = immutable(deepUnwrap(state.next))
+            state.next = user.preferences
+            state.prev = state.next
         }
     })
 
     useEffect(() => {
         if (state.next && !deepEqual(state.prev, state.next)) {
-            const copy = immutable(deepUnwrap(state.next))
+            const copy = clone(state.next)
             user.preferences = copy
             state.prev = copy
 

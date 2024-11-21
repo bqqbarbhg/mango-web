@@ -1,5 +1,3 @@
-import { unwrap } from "kaiku"
-
 export function deepEqual(a: any, b: any) {
     if (a === b) return true
     const type = typeof a
@@ -30,17 +28,17 @@ export function deepEqual(a: any, b: any) {
     }
 }
 
-export function deepUnwrap<T>(a: T): T {
+export function clone<T>(a: T): T {
     if (Array.isArray(a)) {
         const v: any[] = []
         for (let i = 0; i < a.length; i++) {
-            v.push(deepUnwrap(a[i]))
+            v.push(clone(a[i]))
         }
         return v as T
     } else if (typeof a === "object" && a !== null) {
         const v: any = { }
         for (const key of Object.keys(a)) {
-            v[key] = deepUnwrap((a as any)[key])
+            v[key] = clone((a as any)[key])
         }
         return v
     } else {
